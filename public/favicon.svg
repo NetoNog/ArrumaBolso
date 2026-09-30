@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="favBg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#06090F"/>
+    </linearGradient>
+
+    <!-- Luxury Ambient Rim Gradient (Pops on both dark and light browser tabs) -->
+    <linearGradient id="favRim" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <!-- Radiant Gold Coin Gradient -->
+    <linearGradient id="favCoin" x1="16" y1="3.5" x2="16" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="35%" stop-color="#FACC15"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Luminous Emerald Trim -->
+    <linearGradient id="favEmerald" x1="10" y1="18.5" x2="22" y2="18.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Obsidian Wallet Body Back -->
+    <linearGradient id="favWalletBack" x1="3.5" y1="11.5" x2="28.5" y2="28.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- Obsidian Wallet Front Pocket -->
+    <linearGradient id="favWalletFront" x1="16" y1="15.5" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#070A11"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Canvas with Ambient Sheen -->
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.5" fill="url(#favBg)"/>
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.5" stroke="url(#favRim)" stroke-width="1" fill="none"/>
+
+  <!-- Golden Concentric Coin entering wallet pocket -->
+  <g id="coin">
+    <!-- Coin Body with radial glow -->
+    <circle cx="16" cy="9.5" r="5.8" fill="url(#favCoin)"/>
+    <!-- Inner Concentric Ring -->
+    <circle cx="16" cy="9.5" r="3.4" stroke="#070A11" stroke-width="1.2" fill="none"/>
+    <!-- Center Core -->
+    <circle cx="16" cy="9.5" r="1.1" fill="#070A11"/>
+  </g>
+
+  <!-- Obsidian Wallet Body (Back) -->
+  <rect x="3.5" y="11.5" width="25" height="16.5" rx="3.5" fill="url(#favWalletBack)" stroke="#334155" stroke-width="1.1"/>
+
+  <!-- Front Pocket Slit (covers lower half of coin, showing it entering inside) -->
+  <path
+    d="M3.5 15.2C7.5 18 11.5 19.2 16 19.2C20.5 19.2 24.5 18 28.5 15.2V24.5C28.5 26.433 26.933 28 25 28H7C5.067 28 3.5 26.433 3.5 24.5V15.2Z"
+    fill="url(#favWalletFront)"
+    stroke="#475569"
+    stroke-width="1.1"
+    stroke-linejoin="round"
+  />
+
+  <!-- Luminous Emerald Trim Accent on Pocket Lip -->
+  <path
+    d="M10 18.2C11.8 19 13.9 19.5 16 19.5C18.1 19.5 20.2 19 22 18.2"
+    stroke="url(#favEmerald)"
+    stroke-width="1.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Golden Minimalist Clasp -->
+  <rect x="22.5" y="20.5" width="4.5" height="3" rx="0.8" fill="url(#favCoin)"/>
+  <circle cx="24.2" cy="22" r="0.5" fill="#070A11"/>
+</svg>

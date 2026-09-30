@@ -1,0 +1,23 @@
+{
+  "name": "ArrumaBolso — Suas Finanças nos Trinques",
+  "short_name": "ArrumaBolso",
+  "description": "Gestão financeira com foco em previsibilidade, visão escura relaxante para os olhos, controle de cartões, gastos e metas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070A11",
+  "theme_color": "#070A11",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/arrumabolso-icon.svg",
+      "sizes": "64x64 128x128 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32 48x48",
+      "type": "image/svg+xml"
+    }
+  ]
+}
