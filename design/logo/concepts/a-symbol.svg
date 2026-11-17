@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><title>ArrumaBolso</title><g transform="translate(0,-4)">
+  <path fill="#000" fill-rule="evenodd" d="M40 100 H62 V168 A30 30 0 0 0 92 198 H164 A30 30 0 0 0 194 168 V100 H216 V168 A52 52 0 0 1 164 220 H92 A52 52 0 0 1 40 168 Z"/>
+  <rect x="79" y="112" width="26" height="62" rx="5" fill="#000"/>
+  <rect x="115" y="80" width="26" height="94" rx="5" fill="#000"/>
+  <rect x="151" y="44" width="26" height="130" rx="5" fill="#000"/>
+</g></svg>

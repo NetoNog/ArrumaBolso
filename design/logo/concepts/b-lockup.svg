@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 256">
+  <g transform="translate(0,0)">  <path fill="#000" fill-rule="evenodd" d="M90 112 A46 46 0 1 0 90 204 A46 46 0 1 0 90 112 Z M90 136 A22 22 0 1 1 90 180 A22 22 0 1 1 90 136 Z"/>
+  <path fill="#000" fill-rule="evenodd" d="M166 112 A46 46 0 1 0 166 204 A46 46 0 1 0 166 112 Z M166 136 A22 22 0 1 1 166 180 A22 22 0 1 1 166 136 Z"/>
+  <path fill="#000" d="M116 64 A12 12 0 0 1 140 64 V204 H116 Z"/></g>
+  <text x="280" y="160" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="104" letter-spacing="-3" fill="#000">ArrumaBolso</text>
+</svg>
