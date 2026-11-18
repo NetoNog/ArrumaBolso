@@ -6,6 +6,7 @@ import { AlertsCard } from "@/components/dashboard/alerts-card";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { SpendingChart } from "@/components/dashboard/spending-chart";
+import { WelcomeCard } from "@/components/dashboard/welcome-card";
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { addMonths, formatMonthLabel } from "@/lib/dates";
 import {
@@ -46,6 +47,7 @@ export function OverviewView() {
 
   return (
     <div className="grid gap-6">
+      {state.transactions.length === 0 ? <WelcomeCard /> : null}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Indicadores">
         <KpiCard
           icon={Receipt}
