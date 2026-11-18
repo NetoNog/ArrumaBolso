@@ -1,0 +1,9 @@
+# Never upload local secrets; Vercel injects env vars from the project settings.
+.env*
+!.env.example
+# Build output and dependencies are produced on Vercel.
+.next
+node_modules
+.vercel
+# Design sources are not part of the site (published assets live in public/brand).
+design
