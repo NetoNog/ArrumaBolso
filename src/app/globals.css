@@ -95,6 +95,7 @@
   --color-card: var(--card);
   --color-nav-active: var(--nav-active);
   --color-brand: var(--brand);
+  --color-night: var(--night);
   --color-brand-soft: var(--brand-soft);
   --color-ink: var(--ink);
   --color-nav-active-foreground: var(--nav-active-foreground);
@@ -147,6 +148,8 @@
   /* ArrumaBolso brand */
   --brand: #2563eb;
   --brand-soft: #eff6ff;
+  /* "Noite": brand background (BRAND.md), same in both themes. */
+  --night: #0b1b4d;
   --ink: #0f172a;
 }
 
@@ -186,6 +189,7 @@
   --nav-active-foreground: #09090b;
   --brand: #60a5fa;
   --brand-soft: rgba(59, 130, 246, 0.12);
+  --night: #0b1b4d;
   --ink: #f4f4f5;
 }
 
@@ -248,4 +252,11 @@
 /* Space reserved below the content for the mobile bottom navigation. */
 @utility pb-bottom-nav {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Landing page: in-page anchors ("Conhecer funcionalidades") glide unless the user asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has([data-landing]) {
+    scroll-behavior: smooth;
+  }
 }

@@ -10,7 +10,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
     <main className="flex min-h-screen items-center justify-center bg-muted p-4 sm:p-8">
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-card shadow-xl shadow-slate-900/5 ring-1 ring-border lg:min-h-[640px] lg:grid-cols-2">
         <div className="flex flex-col px-6 py-8 sm:px-12 sm:py-10">
-          <Link href="/login" aria-label="ArrumaBolso" className="self-start rounded-md">
+          <Link href="/" aria-label="ArrumaBolso — página inicial" className="self-start rounded-md">
             <BrandLogo height={28} />
           </Link>
           <div className="flex flex-1 items-center py-10">

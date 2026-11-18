@@ -33,10 +33,10 @@ function callbackUrl(next: string): string {
   return url.toString();
 }
 
-export function LoginForm() {
+export function LoginForm({ initialMode = "sign_in" }: { initialMode?: Exclude<Mode, "forgot"> }) {
   const client = getSupabaseBrowserClient();
   const callbackError = useSearchParams().get("error");
-  const [mode, setMode] = useState<Mode>("sign_in");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<"form" | "google" | null>(null);

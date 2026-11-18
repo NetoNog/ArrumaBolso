@@ -4,13 +4,19 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 const LOGIN_PATH = "/login";
+const SIGN_UP_PATH = "/cadastro";
+/** Public landing page, served at `/` to visitors without a session. */
+const LANDING_PATH = "/apresentacao";
 /** Routes reachable without a session. */
-const PUBLIC_PATHS = new Set([LOGIN_PATH, "/marca", "/auth/callback"]);
+const PUBLIC_PATHS = new Set([LOGIN_PATH, SIGN_UP_PATH, LANDING_PATH, "/marca", "/auth/callback"]);
+/** Auth screens a signed-in user has no reason to see. */
+const AUTH_PATHS = new Set([LOGIN_PATH, SIGN_UP_PATH]);
 
 /**
- * Optimistic auth gate: refreshes the Supabase session cookies and sends
- * visitors without a session to the login screen. Data access itself is still
- * protected by Row Level Security.
+ * Optimistic auth gate: refreshes the Supabase session cookies, shows the
+ * landing page at `/` to visitors without a session (the dashboard otherwise)
+ * and sends them to the login screen from any other private route. Data access
+ * itself is still protected by Row Level Security.
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,7 +24,8 @@ export async function proxy(request: NextRequest) {
 
   const env = getSupabaseEnv();
   if (!env) {
-    // Without a backend there is no way to sign in: everything leads to the login screen.
+    // Without a backend there is no way to sign in: only public pages are reachable.
+    if (pathname === "/") return rewriteTo(request, LANDING_PATH);
     return isPublic ? NextResponse.next() : redirectTo(request, LOGIN_PATH);
   }
 
@@ -37,9 +44,20 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
 
+  // Same URL, different page: anonymous visitors get the landing page at `/`.
+  if (!signedIn && pathname === "/") return rewriteTo(request, LANDING_PATH, response);
   if (!signedIn && !isPublic) return redirectTo(request, LOGIN_PATH, response);
-  if (signedIn && pathname === LOGIN_PATH) return redirectTo(request, "/", response);
+  if (signedIn && AUTH_PATHS.has(pathname)) return redirectTo(request, "/", response);
   return response;
+}
+
+/** Serves another route under the requested URL, keeping refreshed session cookies. */
+function rewriteTo(request: NextRequest, pathname: string, source?: NextResponse) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  const rewrite = NextResponse.rewrite(url, { request });
+  for (const cookie of source?.cookies.getAll() ?? []) rewrite.cookies.set(cookie);
+  return rewrite;
 }
 
 /** Redirects while keeping any refreshed session cookies. */
