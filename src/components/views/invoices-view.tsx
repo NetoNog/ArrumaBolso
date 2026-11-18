@@ -65,7 +65,7 @@ export function InvoicesView() {
                         type="button"
                         onClick={() => openEdit(parcel.id)}
                         className={cn(
-                          "num rounded-md border px-2 py-1 text-[11px] transition-colors hover:bg-muted",
+                          "num rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted",
                           parcel.source === "projected" && "border-dashed text-muted-foreground",
                           parcel.invoice_month === currentMonth && "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-200",
                         )}

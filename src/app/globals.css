@@ -4,12 +4,66 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Type scale from the Astryx design system (github.com/meta/astryx, neutral
+ * theme): geometric progression size = 14px x 1.2^step, line heights snapped
+ * to a 4px grid (1.5 for text, 1.4 for medium headings, 1.25 for display).
+ * Not `inline`, so utilities read these variables and the touch adaptation
+ * below can retune them.
+ */
+@theme {
+  --text-xs: 0.7292rem; /* 11.67px, step -1: supporting text */
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem; /* 14px, step 0: body */
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1.05rem; /* 16.8px, step 1: large text */
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.1502rem; /* 18.4px, step 1.5 */
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.26rem; /* 20.16px, step 2: h2 */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.512rem; /* 24.19px, step 3: h1 */
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.8144rem; /* 29.03px, step 4 */
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 2.1773rem; /* 34.84px, step 5 */
+  --text-4xl--line-height: 2.75rem;
+  --text-5xl: 2.6127rem; /* 41.8px, step 6: display */
+  --text-5xl--line-height: 3.25rem;
+}
+
+/*
+ * Astryx "Mobile Type" adaptation: on touch screens below lg the body floors
+ * at 16px and the ratio drops to 1.1736, so text is easier to read on a phone
+ * while the largest display size keeps its desktop size.
+ */
+@media (pointer: coarse) and (max-width: 63.99rem) {
+  :root {
+    --text-xs: 0.8521rem; /* 13.63px */
+    --text-xs--line-height: 1.25rem;
+    --text-sm: 1rem; /* 16px */
+    --text-sm--line-height: 1.5rem;
+    --text-base: 1.1736rem; /* 18.78px */
+    --text-base--line-height: 1.75rem;
+    --text-lg: 1.2714rem; /* 20.34px */
+    --text-lg--line-height: 1.75rem;
+    --text-xl: 1.3773rem; /* 22.04px */
+    --text-xl--line-height: 2rem;
+    --text-2xl: 1.6164rem; /* 25.86px */
+    --text-2xl--line-height: 2.25rem;
+    --text-3xl: 1.8971rem; /* 30.35px */
+    --text-3xl--line-height: 2.75rem;
+    --text-4xl: 2.2264rem; /* 35.62px */
+    --text-4xl--line-height: 2.75rem;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
-  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-heading: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -174,10 +228,9 @@
   }
 }
 
+/* Money, dates and percentages: same face as the text, with tabular figures so columns line up. */
 @utility num {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 /* Login entrance motion (wrapped in motion-safe: at the call sites). */

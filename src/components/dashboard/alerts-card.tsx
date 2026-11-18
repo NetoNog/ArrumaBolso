@@ -56,7 +56,7 @@ export function AlertsCard() {
                       </Pill>
                     ))}
                   </div>
-                  <p className="truncate text-[13px] font-semibold text-foreground">{alert.title}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{alert.title}</p>
                   <p className="num truncate text-xs text-muted-foreground">{alert.description}</p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

@@ -64,7 +64,7 @@ function MonthSwitcher({ className }: { className?: string }) {
         type="button"
         onClick={() => setSelectedMonth(currentMonth)}
         title="Voltar para a fatura atual"
-        className="flex items-center gap-1.5 px-1.5 text-[13px] font-medium"
+        className="flex items-center gap-1.5 px-1.5 text-sm font-medium"
       >
         <CalendarDays className="size-3.5 text-muted-foreground" />
         <span className="num">Fatura {formatMonthLabel(selectedMonth)}</span>
@@ -113,7 +113,7 @@ function AlertsBell() {
                 onClick={() => openEdit(group[group.length - 1].id)}
                 className="rounded-lg px-2 py-2 text-left hover:bg-muted"
               >
-                <p className="text-[13px] font-medium">
+                <p className="text-sm font-medium">
                   {group[0].clean_title} ({group.length}x <span className="num">{formatBRL(group[0].amount)}</span>)
                 </p>
                 <p className="text-xs text-muted-foreground">Mesmo valor no mesmo dia • clique para revisar</p>

@@ -356,7 +356,7 @@ export function TransactionsTable({
                       </span>
                       <span className="flex flex-wrap items-center gap-1 pt-0.5">
                         <TransactionPills tx={tx} isDuplicate={duplicateIds.has(tx.id)} />
-                        {tx.notes ? <span className="max-w-[200px] truncate text-[11px] text-muted-foreground">“{tx.notes}”</span> : null}
+                        {tx.notes ? <span className="max-w-[200px] truncate text-xs text-muted-foreground">“{tx.notes}”</span> : null}
                       </span>
                     </button>
                   </TableCell>

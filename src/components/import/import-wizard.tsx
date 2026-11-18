@@ -357,7 +357,7 @@ function ReviewRow({
         <div className="flex flex-col items-start gap-1">
           <Pill tone={meta.tone}>{meta.label}</Pill>
           {row.status === "deleted" ? (
-            <label className="flex items-center gap-1.5 text-[11px]">
+            <label className="flex items-center gap-1.5 text-xs">
               <Checkbox checked={restored} onCheckedChange={(checked) => onRestore(checked)} />
               Restaurar
             </label>
@@ -368,7 +368,7 @@ function ReviewRow({
       <TableCell>
         <div className="flex min-w-0 flex-col gap-1">
           <span className="truncate font-medium text-foreground">{row.suggestedCleanTitle}</span>
-          <span className="num truncate text-[11px] text-muted-foreground">{row.rawTitle}</span>
+          <span className="num truncate text-xs text-muted-foreground">{row.rawTitle}</span>
           <div className="flex flex-wrap gap-1">
             {row.alerts.includes("duplicate_same_day") ? <Pill tone="amber">Mesmo dia #{row.occurrenceIndex}</Pill> : null}
             {row.installment ? (
@@ -432,7 +432,7 @@ function SummaryTile({
       <span className="grid">
         <span className="num text-xl font-semibold">{value}</span>
         <span className="text-xs font-medium">{label}</span>
-        <span className="text-[11px] text-muted-foreground">{hint}</span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
       </span>
     </button>
   );

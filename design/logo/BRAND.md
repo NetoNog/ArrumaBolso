@@ -54,8 +54,10 @@ Proporção: 80% neutros, 15% Azul Bolso, até 5% semânticas.
 
 ## Tipografia
 
-- **Inter:** interface e títulos. Pesos 700 (logo), 600 (títulos), 500 (rótulos) e 400 (texto).
-- **JetBrains Mono** com algarismos tabulares: valores, datas e percentuais (classe `num`).
+- **Figtree:** interface e títulos, seguindo o design system [Astryx](https://github.com/meta/astryx) (tema neutral). Pesos 600 (títulos), 500 (rótulos) e 400 (texto).
+- **Escala tipográfica Astryx:** base 14 px × 1,2 por degrau, alturas de linha em grade de 4 px. Em telas de toque abaixo de 1024 px a base sobe para 16 px (razão 1,1736). Tokens em `src/app/globals.css`.
+- **Valores, datas e percentuais:** a própria Figtree com algarismos tabulares (classe `num`), para colunas alinhadas.
+- **Logo:** o wordmark continua em Inter Bold (OFL) convertida em contornos; não depende de fonte instalada.
 
 ## Padrão gráfico
 

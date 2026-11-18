@@ -40,7 +40,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             onNavigate?.();
             openSearch();
           }}
-          className="flex h-9 w-full items-center gap-2 rounded-lg border bg-background px-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:border-slate-300 dark:hover:border-zinc-600"
+          className="flex h-9 w-full items-center gap-2 rounded-lg border bg-background px-2.5 text-left text-sm text-muted-foreground transition-colors hover:border-slate-300 dark:hover:border-zinc-600"
         >
           <Search className="size-3.5" />
           <span className="flex-1 truncate">Buscar lançamento ou loja...</span>
@@ -73,8 +73,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             size={32}
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium text-foreground">{state.settings.display_name}</p>
-            <p className="truncate text-[11px] text-muted-foreground">{userEmail ?? "Controle Pessoal"}</p>
+            <p className="truncate text-sm font-medium text-foreground">{state.settings.display_name}</p>
+            <p className="truncate text-xs text-muted-foreground">{userEmail ?? "Controle Pessoal"}</p>
           </div>
           <Button
             variant="ghost"
@@ -110,7 +110,7 @@ function NavLink({
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors",
+        "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium transition-colors",
         active ? "bg-nav-active text-nav-active-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground",
       )}
     >
@@ -119,7 +119,7 @@ function NavLink({
       {badge !== undefined && badge > 0 ? (
         <span
           className={cn(
-            "num inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-[11px] font-semibold",
+            "num inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-semibold",
             active ? "bg-white/15 text-current" : "bg-muted text-muted-foreground",
           )}
         >

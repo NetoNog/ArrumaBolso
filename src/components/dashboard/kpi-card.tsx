@@ -37,7 +37,7 @@ export function KpiCard({
         </span>
       </div>
       <div className="grid gap-0.5">
-        <span className="num text-[26px] leading-tight font-semibold tracking-tight text-foreground">{value}</span>
+        <span className="num text-2xl leading-tight font-semibold tracking-tight text-foreground">{value}</span>
         <span className="text-sm text-muted-foreground">{subtitle}</span>
       </div>
     </div>

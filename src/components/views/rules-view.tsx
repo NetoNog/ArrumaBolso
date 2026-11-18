@@ -83,7 +83,7 @@ export function RulesView() {
                       {category ? <CategoryIcon icon={category.icon} color={category.color} /> : null}
                       {category?.name ?? "Sem categoria"} • {rule.clean_name_override ?? "nome automático"}
                     </span>
-                    <span className="num mt-0.5 block text-[11px] text-muted-foreground">
+                    <span className="num mt-0.5 block text-xs text-muted-foreground">
                       Prioridade {rule.priority} • {matches(rule)} ocorrência(s)
                     </span>
                   </button>

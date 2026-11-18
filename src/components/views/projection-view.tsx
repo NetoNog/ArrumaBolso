@@ -135,7 +135,7 @@ export function ProjectionView() {
                     <span>Comprometido {formatBRL(row.expected)}</span>
                     <span className="text-emerald-600">Renda {formatBRL(row.monthIncome)}</span>
                   </span>
-                  <span className="num text-[11px] text-muted-foreground">
+                  <span className="num text-xs text-muted-foreground">
                     Parcelas {formatBRL(row.commitment.installments)} • Assinaturas {formatBRL(row.commitment.subscriptions)} • Agendados{" "}
                     {formatBRL(row.commitment.scheduled)}
                   </span>
@@ -224,7 +224,7 @@ export function ProjectionView() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{tx.clean_title}</p>
-                      <p className="num text-[11px] text-muted-foreground">
+                      <p className="num text-xs text-muted-foreground">
                         {formatDateBR(tx.date)}
                         {tx.installment_total ? ` • parcela ${tx.installment_current}/${tx.installment_total}` : ""}
                       </p>
@@ -237,7 +237,7 @@ export function ProjectionView() {
                   <div key={sub.id} className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{sub.title}</p>
-                      <p className="text-[11px] text-muted-foreground">Assinatura prevista • dia {sub.billing_day}</p>
+                      <p className="text-xs text-muted-foreground">Assinatura prevista • dia {sub.billing_day}</p>
                     </div>
                     <Pill tone="violet">Assinatura</Pill>
                     <span className="num text-sm">{formatBRL(sub.expected_amount)}</span>

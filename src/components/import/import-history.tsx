@@ -104,7 +104,7 @@ export function ImportHistory() {
               <div key={item.unique_hash} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{item.raw_title}</p>
-                  <p className="num truncate text-[11px] text-muted-foreground">
+                  <p className="num truncate text-xs text-muted-foreground">
                     {item.unique_hash.slice(0, 16)}… • excluído em {dateTimeFormatter.format(new Date(item.deleted_at))}
                   </p>
                 </div>

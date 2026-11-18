@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Figtree } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/app/theme-provider";
@@ -7,8 +7,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const jetbrainsMono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"] });
+// Figtree, the typeface of the Astryx design system (Meta). Variable font: one
+// file covers every weight, and it ships tabular figures for money columns.
+const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin", "latin-ext"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "ArrumaBolso — Inteligência Financeira Pessoal",
@@ -32,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${figtree.variable} h-full antialiased`}>
       <body className="min-h-full">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <TooltipProvider>

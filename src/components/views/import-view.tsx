@@ -25,7 +25,7 @@ export function ImportView() {
               <item.icon className="size-4" />
             </span>
             <div>
-              <p className="text-[13px] font-semibold">{item.title}</p>
+              <p className="text-sm font-semibold">{item.title}</p>
               <p className="text-xs text-muted-foreground">{item.text}</p>
             </div>
           </div>

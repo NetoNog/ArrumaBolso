@@ -36,7 +36,7 @@ export function CategoryBreakdown() {
           const tone = ratioTone(row.ratio);
           return (
             <div key={row.category?.id ?? "none"} className="grid gap-1.5">
-              <div className="flex items-center gap-2 text-[13px]">
+              <div className="flex items-center gap-2 text-sm">
                 {row.category ? <CategoryIcon icon={row.category.icon} color={row.category.color} /> : <CategoryIcon icon="tag" color="#64748B" />}
                 <span className="flex-1 truncate font-medium">{row.category?.name ?? "Sem categoria"}</span>
                 <span className="num text-xs text-muted-foreground">

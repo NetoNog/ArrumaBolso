@@ -175,7 +175,7 @@ export default function BrandGuidePage() {
                   <span className="num font-medium">{color.hex}</span>
                   <span className="num text-muted-foreground">RGB {color.rgb}</span>
                   <span className="text-muted-foreground">{color.role}</span>
-                  <span className="text-[11px] text-muted-foreground">{color.contrast}</span>
+                  <span className="text-xs text-muted-foreground">{color.contrast}</span>
                 </div>
               </div>
             ))}
@@ -202,17 +202,20 @@ export default function BrandGuidePage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border bg-card p-6 shadow-panel">
               <p className="text-xs text-muted-foreground">Interface e títulos</p>
-              <p className="mt-2 text-5xl font-bold tracking-tight">Inter</p>
+              <p className="mt-2 text-5xl font-bold tracking-tight">Figtree</p>
               <p className="mt-4 text-2xl font-semibold tracking-tight">Visão Geral Financeira</p>
               <p className="text-sm text-muted-foreground">Métricas de faturas, recorrências e previsibilidade futura</p>
-              <p className="mt-4 text-xs text-muted-foreground">Bold 700 no logo • Semibold 600 títulos • Medium 500 rótulos • Regular 400 texto</p>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Fonte e escala do design system Astryx (base 14px × 1,2; 16px no celular) • Semibold 600 títulos • Medium 500 rótulos •
+                Regular 400 texto. O logo segue em Inter Bold convertida em contornos.
+              </p>
             </div>
             <div className="rounded-2xl border bg-card p-6 shadow-panel">
               <p className="text-xs text-muted-foreground">Valores, datas e percentuais</p>
-              <p className="num mt-2 text-5xl font-semibold">JetBrains Mono</p>
+              <p className="num mt-2 text-5xl font-semibold">Figtree tabular</p>
               <p className="num mt-4 text-2xl font-semibold">R$ 1.154,97</p>
               <p className="num text-sm text-muted-foreground">07/11/2026 • 61,5% • Parcela 1/2</p>
-              <p className="mt-4 text-xs text-muted-foreground">Sempre com algarismos tabulares, para colunas de valores alinhadas.</p>
+              <p className="mt-4 text-xs text-muted-foreground">Mesma fonte do texto com algarismos tabulares (classe num), para colunas de valores alinhadas.</p>
             </div>
           </div>
         </Section>

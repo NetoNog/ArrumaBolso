@@ -62,8 +62,8 @@ function Step({ done, index, children }: { done: boolean; index: number; childre
       <span
         className={
           done
-            ? "num flex size-5 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-semibold text-white"
-            : "num flex size-5 items-center justify-center rounded-full border text-[11px] font-semibold text-muted-foreground"
+            ? "num flex size-5 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white"
+            : "num flex size-5 items-center justify-center rounded-full border text-xs font-semibold text-muted-foreground"
         }
       >
         {done ? "✓" : index}
