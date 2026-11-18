@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
@@ -17,7 +18,14 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { addMonths, cycleBounds, formatDateBR, formatMonthLabel, monthRange } from "@/lib/dates";
 import { updateSettings } from "@/lib/domain/operations";
 import type { InvoiceMonth } from "@/lib/domain/types";
-import { committedFor, incomeTotal, invoiceTotal, totalBudget, transactionsOfMonth } from "@/lib/finance/metrics";
+import {
+  committedFor,
+  expectedMonthlyIncome,
+  incomeTotal,
+  invoiceTotal,
+  totalBudget,
+  transactionsOfMonth,
+} from "@/lib/finance/metrics";
 import { formatBRL, parseAmount, sumMoney } from "@/lib/money";
 import { useFinance } from "@/lib/store/finance-store";
 
@@ -28,7 +36,8 @@ export function ProjectionView() {
   const [incomeText, setIncomeText] = useState(state.settings.monthly_income.toFixed(2).replace(".", ","));
 
   const budget = totalBudget(state.categories);
-  const income = state.settings.monthly_income;
+  const income = expectedMonthlyIncome(state);
+  const usesSources = state.income_sources.length > 0;
   const months = monthRange(currentMonth, 12);
   const rows = months.map((month) => {
     const commitment = committedFor(state, month, currentMonth, today);
@@ -53,10 +62,21 @@ export function ProjectionView() {
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Premissas da projeção</CardTitle>
           <CardDescription>
-            Comprometido = parcelas + assinaturas ativas + lançamentos manuais agendados. Receitas lançadas no mês substituem a renda padrão.
+            Comprometido = parcelas + assinaturas ativas + lançamentos manuais agendados. Entradas já lançadas no mês substituem a renda
+            esperada.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
+          {usesSources ? (
+            <div className="grid gap-1">
+              <p className="text-sm text-muted-foreground">Renda esperada (fontes ativas)</p>
+              <p className="num text-xl font-semibold">{formatBRL(income)}</p>
+              <Link href="/renda" className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
+                <Wallet className="size-3.5" /> Gerenciar em Salário & Renda
+              </Link>
+            </div>
+          ) : (
+          <>
           <div className="grid gap-1.5">
             <Label htmlFor="income">Renda mensal esperada (R$)</Label>
             <Input id="income" inputMode="decimal" enterKeyHint="done" className="num w-44" value={incomeText} onChange={(event) => setIncomeText(event.target.value)} />
@@ -75,6 +95,8 @@ export function ProjectionView() {
           >
             Salvar renda
           </Button>
+          </>
+          )}
           <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">
             Teto mensal das categorias: <span className="num font-medium text-foreground">{formatBRL(budget)}</span>
           </p>

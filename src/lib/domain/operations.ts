@@ -1,10 +1,11 @@
 import { categorize } from "@/lib/categorization";
-import { addMonths, addMonthsToDate, invoiceMonthForDate } from "@/lib/dates";
+import { addMonths, addMonthsToDate, daysInMonth, invoiceMonthForDate, normalizeDate, parseMonth } from "@/lib/dates";
 import type {
   CategorizationRule,
   Category,
   EditableField,
   FinanceState,
+  IncomeSource,
   InvoiceMonth,
   IsoDate,
   PaymentMethod,
@@ -33,6 +34,8 @@ export interface NewTransactionInput {
   recurrence: Recurrence;
   /** Optional competence override; defaults to the cycle derived from `date`. */
   invoice_month?: InvoiceMonth;
+  /** Links an income entry to an income source (ignored for other types). */
+  income_source_id?: string | null;
 }
 
 export type TransactionPatch = Partial<Pick<Transaction, EditableField>>;
@@ -69,6 +72,7 @@ function baseTransaction(now: string): Omit<
     locked_fields: [],
     is_ignored: false,
     subscription_id: null,
+    income_source_id: null,
     installment_group_id: null,
     installment_current: null,
     installment_total: null,
@@ -137,6 +141,7 @@ export function createTransaction(
     invoice_month: invoiceMonth,
     amount: signedAmount,
     subscription_id: subscriptionId,
+    income_source_id: input.type === "income" ? (input.income_source_id ?? null) : null,
   };
   return { ...state, transactions: [...state.transactions, tx], recurring_subscriptions: subscriptions };
 }
@@ -304,6 +309,72 @@ export function deleteSubscription(state: FinanceState, id: string): FinanceStat
     recurring_subscriptions: state.recurring_subscriptions.filter((item) => item.id !== id),
     transactions: state.transactions.map((tx) => (tx.subscription_id === id ? { ...tx, subscription_id: null } : tx)),
   };
+}
+
+// ------------------------------------------------------------ income sources
+
+export function upsertIncomeSource(state: FinanceState, source: Omit<IncomeSource, "id"> & { id?: string }): FinanceState {
+  if (source.id) {
+    return {
+      ...state,
+      income_sources: state.income_sources.map((item) => (item.id === source.id ? { ...item, ...source, id: item.id } : item)),
+    };
+  }
+  return { ...state, income_sources: [...state.income_sources, { ...source, id: newId() }] };
+}
+
+/** Removes the source; entries already received stay as plain income. */
+export function deleteIncomeSource(state: FinanceState, id: string): FinanceState {
+  return {
+    ...state,
+    income_sources: state.income_sources.filter((item) => item.id !== id),
+    transactions: state.transactions.map((tx) => (tx.income_source_id === id ? { ...tx, income_source_id: null } : tx)),
+  };
+}
+
+/**
+ * Date the source is expected to pay inside the cycle of `month`. The cycle of
+ * invoice M runs from day `closingDay` of M-1 to the day before it in M, so a
+ * pay day on or after the closing day falls in the previous calendar month.
+ */
+export function expectedPayDate(month: InvoiceMonth, payDay: number, closingDay: number): IsoDate {
+  const target = payDay >= closingDay ? addMonths(month, -1) : month;
+  const { year, month: monthNumber } = parseMonth(target);
+  const day = Math.min(payDay, daysInMonth(year, monthNumber));
+  return `${target}-${String(day).padStart(2, "0")}`;
+}
+
+export interface ReceiveIncomeInput {
+  date: IsoDate;
+  amount: number;
+  notes?: string;
+}
+
+/** Records money received from an income source as an income entry linked to it. */
+export function receiveIncome(
+  state: FinanceState,
+  sourceId: string,
+  input: ReceiveIncomeInput,
+  now: string = new Date().toISOString(),
+): FinanceState {
+  const source = state.income_sources.find((item) => item.id === sourceId);
+  const date = normalizeDate(input.date);
+  if (!source || !date || !(input.amount > 0)) return state;
+  const tx: Transaction = {
+    ...baseTransaction(now),
+    id: newId(),
+    date,
+    invoice_month: invoiceMonthForDate(date, state.settings.closing_day),
+    raw_title: source.title,
+    clean_title: source.title,
+    amount: Math.abs(input.amount),
+    type: "income",
+    payment_method: "pix_debit",
+    category_id: null,
+    notes: input.notes?.trim() ?? "",
+    income_source_id: source.id,
+  };
+  return { ...state, transactions: [...state.transactions, tx] };
 }
 
 // --------------------------------------------------------------------- rules

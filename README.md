@@ -23,6 +23,11 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 2. Copie `.env.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 3. Crie uma conta em `/login`.
 
+## Entradas, saídas e salário
+
+- **Entradas & Saídas** (`/fluxo`): entradas = receitas do mês; saídas = despesas de qualquer forma de pagamento. Pagamentos de fatura não contam (seriam contados em dobro, já que os gastos do cartão estão nas saídas). A competência é a mesma do resto do app: o ciclo da fatura.
+- **Salário & Renda** (`/renda`): fontes de renda (`income_sources`) com valor líquido e dia de pagamento. Cada recebimento vira uma receita vinculada à fonte (`transactions.income_source_id`). A soma das fontes ativas é a renda esperada da Projeção; sem fontes, vale a renda manual.
+
 ## Arquitetura
 
 | Camada | Local |
@@ -30,7 +35,7 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 | Tipos de domínio | `src/lib/domain/types.ts` |
 | Operações de CRUD (funções puras) | `src/lib/domain/operations.ts` |
 | Motor de importação/conciliação do CSV | `src/lib/nubank-parser.ts` |
-| Métricas, alertas e projeção | `src/lib/finance/metrics.ts` |
+| Métricas, alertas, projeção, entradas/saídas e renda | `src/lib/finance/metrics.ts` |
 | Repositório (Supabase) | `src/lib/data/repository.ts` |
 | Proteção de rotas (redirect para `/login`) | `src/proxy.ts` |
 | Store React | `src/lib/store/finance-store.tsx` |

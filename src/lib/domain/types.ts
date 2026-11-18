@@ -45,6 +45,8 @@ export interface Transaction {
   locked_fields: EditableField[];
   is_ignored: boolean;
   subscription_id: string | null;
+  /** Income source this entry was received from (salary management). */
+  income_source_id: string | null;
   notes: string;
   installment_group_id: string | null;
   installment_current: number | null;
@@ -82,6 +84,20 @@ export interface RecurringSubscription {
   active: boolean;
 }
 
+export type IncomeKind = "salary" | "freelance" | "benefit" | "other";
+
+/** A recurring income: salary, freelance contract, benefit... */
+export interface IncomeSource {
+  id: string;
+  title: string;
+  kind: IncomeKind;
+  /** Net amount expected each month. */
+  expected_amount: number;
+  /** Day of the month the money usually arrives. */
+  pay_day: number;
+  active: boolean;
+}
+
 export interface CategorizationRule {
   id: string;
   pattern: string;
@@ -94,6 +110,7 @@ export interface UserSettings {
   display_name: string;
   /** Day of the month on which the card invoice closes. */
   closing_day: number;
+  /** Fallback expected income, used only while no income source is registered. */
   monthly_income: number;
   dismissed_alerts: string[];
 }
@@ -105,6 +122,7 @@ export interface FinanceState {
   import_batches: ImportBatch[];
   deleted_csv_hashes: DeletedCsvHash[];
   recurring_subscriptions: RecurringSubscription[];
+  income_sources: IncomeSource[];
   categorization_rules: CategorizationRule[];
 }
 
@@ -112,6 +130,13 @@ export const TRANSACTION_TYPE_LABEL: Record<TransactionType, string> = {
   expense: "Despesa",
   income: "Receita / Entrada",
   payment: "Pagamento de Fatura",
+};
+
+export const INCOME_KIND_LABEL: Record<IncomeKind, string> = {
+  salary: "Salário",
+  freelance: "Freelance / PJ",
+  benefit: "Benefício",
+  other: "Outra renda",
 };
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

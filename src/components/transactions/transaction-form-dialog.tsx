@@ -45,7 +45,16 @@ const RECURRENCE_OPTIONS: { value: RecurrenceKind; label: string }[] = [
 export interface TransactionFormDefaults {
   date?: IsoDate;
   invoice_month?: InvoiceMonth;
+  type?: TransactionType;
 }
+
+const NO_SOURCE = "__none__";
+
+const CREATE_TITLE: Record<TransactionType, string> = {
+  expense: "Nova Saída",
+  income: "Nova Entrada",
+  payment: "Pagamento de Fatura",
+};
 
 function formatAmountInput(value: number): string {
   return Math.abs(value).toFixed(2).replace(".", ",");
@@ -90,7 +99,13 @@ function TransactionForm({
   const { state, commit, today } = useFinance();
   const isEdit = transaction !== null;
 
-  const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
+  const [type, setType] = useState<TransactionType>(transaction?.type ?? defaults?.type ?? "expense");
+  const [incomeSourceId, setIncomeSourceId] = useState<string>(NO_SOURCE);
+  const activeSources = state.income_sources.filter((source) => source.active);
+  const sourceOptions = [
+    { value: NO_SOURCE, label: "Nenhuma (entrada avulsa)" },
+    ...activeSources.map((source) => ({ value: source.id, label: source.title })),
+  ];
   const [method, setMethod] = useState<PaymentMethod>(transaction?.payment_method ?? "pix_debit");
   const [date, setDate] = useState<IsoDate>(transaction?.date ?? defaults?.date ?? today);
   const [title, setTitle] = useState(transaction?.clean_title ?? "");
@@ -168,6 +183,7 @@ function TransactionForm({
           category_id: categoryId,
           notes,
           invoice_month: invoiceMonth,
+          income_source_id: incomeSourceId === NO_SOURCE ? null : incomeSourceId,
           recurrence:
             recurrence === "installments"
               ? { kind: "installments", count: installmentCount }
@@ -187,7 +203,7 @@ function TransactionForm({
   return (
     <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
       <DialogHeader>
-        <DialogTitle>{isEdit ? "Editar Lançamento" : "Novo Gasto"}</DialogTitle>
+        <DialogTitle>{isEdit ? "Editar Lançamento" : CREATE_TITLE[type]}</DialogTitle>
         <DialogDescription>
           {isEdit
             ? "Alterações manuais são soberanas: o lançamento fica protegido contra reimportações do CSV."
@@ -230,6 +246,25 @@ function TransactionForm({
           <SimpleSelect id="tx-method" value={method} options={METHOD_OPTIONS} onChange={setMethod} className="w-full" />
         </Field>
       </div>
+
+      {!isEdit && type === "income" && activeSources.length > 0 ? (
+        <Field label="Fonte de renda" htmlFor="tx-income-source">
+          <SimpleSelect
+            id="tx-income-source"
+            value={incomeSourceId}
+            options={sourceOptions}
+            onChange={(value) => {
+              setIncomeSourceId(value);
+              const source = activeSources.find((item) => item.id === value);
+              if (!source) return;
+              // Prefill from the source without overwriting what the user typed.
+              if (!title.trim()) setTitle(source.title);
+              if (!amountText.trim()) setAmountText(formatAmountInput(source.expected_amount));
+            }}
+            className="w-full"
+          />
+        </Field>
+      ) : null}
 
       <Field label="Título / Descrição" htmlFor="tx-title" error={errors.title}>
         <Input id="tx-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex.: Mercado do mês" autoFocus={!isEdit} />

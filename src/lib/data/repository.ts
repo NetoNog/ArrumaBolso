@@ -6,6 +6,7 @@ import type {
   DeletedCsvHash,
   FinanceState,
   ImportBatch,
+  IncomeSource,
   RecurringSubscription,
   Transaction,
 } from "@/lib/domain/types";
@@ -35,11 +36,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Minimal structural validation for untrusted persisted/imported JSON. */
-export function parseFinanceState(value: unknown): FinanceState | null {
-  if (!isRecord(value) || !isRecord(value.settings)) return null;
-  if (!STATE_ARRAY_KEYS.every((key) => Array.isArray(value[key]))) return null;
-  const settings = value.settings;
+/**
+ * Minimal structural validation for untrusted persisted/imported JSON. Backups
+ * made before salary management existed are upgraded (no income sources).
+ */
+export function parseFinanceState(input: unknown): FinanceState | null {
+  if (!isRecord(input) || !isRecord(input.settings)) return null;
+  const value: Record<string, unknown> = { income_sources: [], ...input };
+  if (![...STATE_ARRAY_KEYS, "income_sources"].every((key) => Array.isArray(value[key]))) return null;
+  const settings = input.settings;
   if (typeof settings.closing_day !== "number" || typeof settings.display_name !== "string") return null;
   const transactions = value.transactions as unknown[];
   const validTx = transactions.every(
@@ -50,7 +55,12 @@ export function parseFinanceState(value: unknown): FinanceState | null {
       typeof tx.date === "string" &&
       typeof tx.invoice_month === "string",
   );
-  return validTx ? (value as unknown as FinanceState) : null;
+  if (!validTx) return null;
+  const state = value as unknown as FinanceState;
+  return {
+    ...state,
+    transactions: state.transactions.map((tx) => ({ ...tx, income_source_id: tx.income_source_id ?? null })),
+  };
 }
 
 // ----------------------------------------------------------------- Supabase
@@ -58,6 +68,7 @@ export function parseFinanceState(value: unknown): FinanceState | null {
 type TableName =
   | "categories"
   | "recurring_subscriptions"
+  | "income_sources"
   | "import_batches"
   | "transactions"
   | "categorization_rules"
@@ -85,6 +96,12 @@ const TABLES = {
     keyColumn: "id",
     key: (item: RecurringSubscription) => item.id,
     select: (s: FinanceState) => s.recurring_subscriptions,
+  },
+  incomeSources: {
+    table: "income_sources",
+    keyColumn: "id",
+    key: (item: IncomeSource) => item.id,
+    select: (s: FinanceState) => s.income_sources,
   },
   batches: { table: "import_batches", keyColumn: "id", key: (item: ImportBatch) => item.id, select: (s: FinanceState) => s.import_batches },
   transactions: { table: "transactions", keyColumn: "id", key: (item: Transaction) => item.id, select: (s: FinanceState) => s.transactions },
@@ -126,18 +143,19 @@ export class SupabaseRepository implements FinanceRepository {
       .maybeSingle();
     if (error) throw new Error(`Falha ao carregar perfil: ${error.message}`);
 
-    const [categories, transactions, importBatches, deleted, subscriptions, rules] = await Promise.all([
+    const [categories, transactions, importBatches, deleted, subscriptions, incomeSources, rules] = await Promise.all([
       this.fetchAll<Category>("categories"),
       this.fetchAll<Transaction>("transactions"),
       this.fetchAll<ImportBatch>("import_batches"),
       this.fetchAll<DeletedCsvHash>("deleted_csv_hashes"),
       this.fetchAll<RecurringSubscription>("recurring_subscriptions"),
+      this.fetchAll<IncomeSource>("income_sources"),
       this.fetchAll<CategorizationRule>("categorization_rules"),
     ]);
 
     // A profile row (created by the signup trigger) means the account exists, even
     // with no data yet: return it as-is so an empty account is never re-initialised.
-    const isEmpty = categories.length === 0 && transactions.length === 0 && rules.length === 0;
+    const isEmpty = categories.length === 0 && transactions.length === 0 && rules.length === 0 && incomeSources.length === 0;
     if (!profile && isEmpty) return null;
 
     return {
@@ -148,10 +166,11 @@ export class SupabaseRepository implements FinanceRepository {
         dismissed_alerts: profile?.dismissed_alerts ?? [],
       },
       categories: categories.map((item) => ({ ...item, monthly_limit: Number(item.monthly_limit) })),
-      transactions: transactions.map((item) => ({ ...item, amount: Number(item.amount) })),
+      transactions: transactions.map((item) => ({ ...item, amount: Number(item.amount), income_source_id: item.income_source_id ?? null })),
       import_batches: importBatches,
       deleted_csv_hashes: deleted,
       recurring_subscriptions: subscriptions.map((item) => ({ ...item, expected_amount: Number(item.expected_amount) })),
+      income_sources: incomeSources.map((item) => ({ ...item, expected_amount: Number(item.expected_amount) })),
       categorization_rules: rules,
     };
   }
@@ -197,7 +216,15 @@ export class SupabaseRepository implements FinanceRepository {
     }
 
     // Parents first on upsert, children first on delete (foreign keys).
-    const upsertOrder = [TABLES.categories, TABLES.subscriptions, TABLES.batches, TABLES.transactions, TABLES.rules, TABLES.deleted];
+    const upsertOrder = [
+      TABLES.categories,
+      TABLES.subscriptions,
+      TABLES.incomeSources,
+      TABLES.batches,
+      TABLES.transactions,
+      TABLES.rules,
+      TABLES.deleted,
+    ];
     for (const spec of upsertOrder) await this.syncTable(spec as TableSpec<object>, previous, next, "upsert");
     for (const spec of [...upsertOrder].reverse()) await this.syncTable(spec as TableSpec<object>, previous, next, "delete");
   }
@@ -209,6 +236,7 @@ export class SupabaseRepository implements FinanceRepository {
       "transactions",
       "import_batches",
       "recurring_subscriptions",
+      "income_sources",
       "categories",
     ];
     for (const table of tables) {

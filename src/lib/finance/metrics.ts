@@ -7,7 +7,17 @@ import {
   formatMonthLabel,
   monthRange,
 } from "@/lib/dates";
-import type { Category, FinanceState, InvoiceMonth, IsoDate, Transaction } from "@/lib/domain/types";
+import { expectedPayDate } from "@/lib/domain/operations";
+import {
+  PAYMENT_METHOD_LABEL,
+  type Category,
+  type FinanceState,
+  type IncomeSource,
+  type InvoiceMonth,
+  type IsoDate,
+  type PaymentMethod,
+  type Transaction,
+} from "@/lib/domain/types";
 import { formatBRL, sumMoney } from "@/lib/money";
 
 export function isCountedExpense(tx: Transaction): boolean {
@@ -40,6 +50,142 @@ export function incomeTotal(state: FinanceState, month: InvoiceMonth): number {
       .filter((tx) => tx.type === "income" && !tx.is_ignored)
       .map((tx) => tx.amount),
   );
+}
+
+// ---------------------------------------------------------------- cash flow
+//
+// Entradas e saídas use the same competence as the rest of the app (the
+// invoice month). Card invoice payments are transfers between your own money
+// and the card, so they are neither an inflow nor an outflow.
+
+export function isCountedIncome(tx: Transaction): boolean {
+  return tx.type === "income" && !tx.is_ignored;
+}
+
+export function incomeOfMonth(state: FinanceState, month: InvoiceMonth): Transaction[] {
+  return transactionsOfMonth(state, month).filter(isCountedIncome);
+}
+
+export interface CashFlowSummary {
+  inflow: number;
+  outflow: number;
+  balance: number;
+  /** Share of the inflow that was kept; `null` when nothing came in. */
+  savingsRate: number | null;
+  outflowByMethod: { method: PaymentMethod; label: string; amount: number }[];
+  inflowByOrigin: { label: string; amount: number }[];
+}
+
+export function cashFlowSummary(state: FinanceState, month: InvoiceMonth): CashFlowSummary {
+  const incomes = incomeOfMonth(state, month);
+  const expenses = expensesOfMonth(state, month);
+  const inflow = sumMoney(incomes.map((tx) => tx.amount));
+  const outflow = sumMoney(expenses.map((tx) => tx.amount));
+  const balance = sumMoney([inflow, -outflow]);
+
+  const outflowByMethod = (Object.keys(PAYMENT_METHOD_LABEL) as PaymentMethod[])
+    .map((method) => ({
+      method,
+      label: PAYMENT_METHOD_LABEL[method],
+      amount: sumMoney(expenses.filter((tx) => tx.payment_method === method).map((tx) => tx.amount)),
+    }))
+    .filter((row) => row.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
+  const sourcesById = new Map(state.income_sources.map((source) => [source.id, source]));
+  const byOrigin = new Map<string, number[]>();
+  for (const tx of incomes) {
+    const label = (tx.income_source_id && sourcesById.get(tx.income_source_id)?.title) || "Outras entradas";
+    byOrigin.set(label, [...(byOrigin.get(label) ?? []), tx.amount]);
+  }
+  const inflowByOrigin = Array.from(byOrigin, ([label, amounts]) => ({ label, amount: sumMoney(amounts) })).sort(
+    (a, b) => b.amount - a.amount,
+  );
+
+  return { inflow, outflow, balance, savingsRate: inflow > 0 ? balance / inflow : null, outflowByMethod, inflowByOrigin };
+}
+
+export interface CashFlowDailyPoint {
+  date: IsoDate;
+  label: string;
+  inflow: number;
+  outflow: number;
+  /** Running balance (inflow - outflow); `null` for days that have not happened yet. */
+  balance: number | null;
+}
+
+/** Day-by-day inflow/outflow over the cycle of `month`, with the running balance. */
+export function dailyCashFlowSeries(state: FinanceState, month: InvoiceMonth, today: IsoDate): CashFlowDailyPoint[] {
+  const { start, end } = cycleBounds(month, state.settings.closing_day);
+  const movements = [...incomeOfMonth(state, month), ...expensesOfMonth(state, month)];
+  const inByDay = new Map<IsoDate, number[]>();
+  const outByDay = new Map<IsoDate, number[]>();
+  for (const tx of movements) {
+    // Items whose competence was moved outside the natural cycle count on the first day.
+    const day = tx.date < start || tx.date > end ? start : tx.date;
+    const bucket = tx.type === "income" ? inByDay : outByDay;
+    bucket.set(day, [...(bucket.get(day) ?? []), tx.amount]);
+  }
+
+  let running = 0;
+  return eachDay(start, end).map((date) => {
+    const inflow = sumMoney(inByDay.get(date) ?? []);
+    const outflow = sumMoney(outByDay.get(date) ?? []);
+    running = sumMoney([running, inflow, -outflow]);
+    return { date, label: formatDateBR(date).slice(0, 5), inflow, outflow, balance: date > today ? null : running };
+  });
+}
+
+export interface CashFlowMonthPoint {
+  month: InvoiceMonth;
+  label: string;
+  inflow: number;
+  outflow: number;
+  balance: number;
+}
+
+/** Inflow vs outflow for the `count` months ending at `lastMonth`. */
+export function cashFlowHistory(state: FinanceState, lastMonth: InvoiceMonth, count = 6): CashFlowMonthPoint[] {
+  return monthRange(addMonths(lastMonth, -(count - 1)), count).map((month) => {
+    const { inflow, outflow, balance } = cashFlowSummary(state, month);
+    return { month, label: formatMonthLabel(month), inflow, outflow, balance };
+  });
+}
+
+// ----------------------------------------------------------- income sources
+
+/** Expected monthly income: the active income sources, or the manual fallback while none exist. */
+export function expectedMonthlyIncome(state: FinanceState): number {
+  if (state.income_sources.length === 0) return state.settings.monthly_income;
+  return sumMoney(state.income_sources.filter((source) => source.active).map((source) => source.expected_amount));
+}
+
+export type IncomeStatus = "received" | "partial" | "overdue" | "upcoming";
+
+export interface IncomeSourceMonth {
+  source: IncomeSource;
+  expectedDate: IsoDate;
+  received: Transaction[];
+  receivedTotal: number;
+  status: IncomeStatus;
+}
+
+/** What a source paid in the cycle of `month` and whether it is on time. */
+export function incomeSourceMonth(state: FinanceState, source: IncomeSource, month: InvoiceMonth, today: IsoDate): IncomeSourceMonth {
+  const expectedDate = expectedPayDate(month, source.pay_day, state.settings.closing_day);
+  const received = state.transactions
+    .filter((tx) => tx.income_source_id === source.id && tx.invoice_month === month && isCountedIncome(tx))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const receivedTotal = sumMoney(received.map((tx) => tx.amount));
+  const status: IncomeStatus =
+    received.length > 0 && receivedTotal >= source.expected_amount
+      ? "received"
+      : received.length > 0
+        ? "partial"
+        : expectedDate < today
+          ? "overdue"
+          : "upcoming";
+  return { source, expectedDate, received, receivedTotal, status };
 }
 
 export function averageTicket(state: FinanceState, month: InvoiceMonth): number {

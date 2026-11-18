@@ -149,6 +149,7 @@ export async function buildSampleState(): Promise<FinanceState> {
     import_batches: [],
     deleted_csv_hashes: [],
     recurring_subscriptions: subscriptions,
+    income_sources: [],
     categorization_rules: rules,
   };
 
@@ -178,6 +179,7 @@ export async function buildSampleState(): Promise<FinanceState> {
     locked_fields: [],
     is_ignored: false,
     subscription_id: null,
+    income_source_id: null,
     notes: "Entrada registrada manualmente",
     installment_group_id: null,
     installment_current: null,

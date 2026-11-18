@@ -3,6 +3,7 @@
 import { CalendarClock, Gauge, Receipt, ShoppingCart } from "lucide-react";
 
 import { AlertsCard } from "@/components/dashboard/alerts-card";
+import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { SpendingChart } from "@/components/dashboard/spending-chart";
@@ -109,6 +110,7 @@ export function OverviewView() {
       </section>
 
       <section className="grid grid-cols-1 gap-6">
+        <CashFlowChart />
         <CategoryBreakdown />
         <TransactionsTable
           title={`Lançamentos da Fatura ${formatMonthLabel(selectedMonth)}`}

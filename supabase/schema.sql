@@ -59,6 +59,21 @@ create table if not exists public.recurring_subscriptions (
 create index if not exists recurring_subscriptions_user_idx on public.recurring_subscriptions (user_id);
 create index if not exists recurring_subscriptions_category_idx on public.recurring_subscriptions (category_id) where category_id is not null;
 
+-- ------------------------------------------------------------ income_sources
+-- Recurring income (salary, freelance, benefits) used for salary management
+-- and for the expected income of the 12-month projection.
+create table if not exists public.income_sources (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 120),
+  kind text not null default 'salary' check (kind in ('salary', 'freelance', 'benefit', 'other')),
+  expected_amount numeric(12, 2) not null check (expected_amount >= 0),
+  pay_day smallint not null default 5 check (pay_day between 1 and 31),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists income_sources_user_idx on public.income_sources (user_id);
+
 -- -------------------------------------------------------------- transactions
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
@@ -78,6 +93,7 @@ create table if not exists public.transactions (
   locked_fields text[] not null default '{}',
   is_ignored boolean not null default false,
   subscription_id uuid references public.recurring_subscriptions (id) on delete set null,
+  income_source_id uuid references public.income_sources (id) on delete set null,
   notes text not null default '',
   installment_group_id text,
   installment_current smallint check (installment_current is null or installment_current >= 1),
@@ -97,6 +113,7 @@ create index if not exists transactions_installment_idx
 create index if not exists transactions_batch_idx on public.transactions (batch_id) where batch_id is not null;
 create index if not exists transactions_category_idx on public.transactions (category_id) where category_id is not null;
 create index if not exists transactions_subscription_idx on public.transactions (subscription_id) where subscription_id is not null;
+create index if not exists transactions_income_source_idx on public.transactions (income_source_id) where income_source_id is not null;
 
 -- ------------------------------------------------------- deleted_csv_hashes
 -- Blacklist: CSV rows deleted by the user never come back on re-import.
@@ -163,12 +180,12 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- authenticated users to their own rows.
 revoke all on table
   public.profiles, public.categories, public.import_batches, public.recurring_subscriptions,
-  public.transactions, public.deleted_csv_hashes, public.categorization_rules
+  public.income_sources, public.transactions, public.deleted_csv_hashes, public.categorization_rules
 from anon;
 
 grant select, insert, update, delete on table
   public.profiles, public.categories, public.import_batches, public.recurring_subscriptions,
-  public.transactions, public.deleted_csv_hashes, public.categorization_rules
+  public.income_sources, public.transactions, public.deleted_csv_hashes, public.categorization_rules
 to authenticated;
 
 -- ------------------------------------------------------- row level security
@@ -176,6 +193,7 @@ alter table public.profiles enable row level security;
 alter table public.categories enable row level security;
 alter table public.import_batches enable row level security;
 alter table public.recurring_subscriptions enable row level security;
+alter table public.income_sources enable row level security;
 alter table public.transactions enable row level security;
 alter table public.deleted_csv_hashes enable row level security;
 alter table public.categorization_rules enable row level security;
@@ -191,7 +209,7 @@ declare
   t text;
 begin
   foreach t in array array[
-    'categories', 'import_batches', 'recurring_subscriptions',
+    'categories', 'import_batches', 'recurring_subscriptions', 'income_sources',
     'transactions', 'deleted_csv_hashes', 'categorization_rules'
   ]
   loop

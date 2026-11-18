@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   CalendarRange,
   CreditCard,
   LayoutDashboard,
@@ -8,6 +9,7 @@ import {
   Settings,
   Target,
   Upload,
+  Wallet,
   Wand2,
 } from "lucide-react";
 
@@ -52,11 +54,25 @@ export const NAV_GROUPS: NavGroup[] = [
         title: "Lançamentos",
         subtitle: "CRUD completo, seleção em lote e auditoria de origem",
       },
+      {
+        href: "/fluxo",
+        label: "Entradas & Saídas",
+        icon: ArrowLeftRight,
+        title: "Entradas & Saídas",
+        subtitle: "Fluxo do mês: o que entrou, o que saiu e quanto sobrou",
+      },
     ],
   },
   {
     label: "Planejamento & controle",
     items: [
+      {
+        href: "/renda",
+        label: "Salário & Renda",
+        icon: Wallet,
+        title: "Salário & Renda",
+        subtitle: "Fontes de renda, recebimentos do mês e renda esperada",
+      },
       {
         href: "/faturas",
         label: "Faturas & Parcelas",

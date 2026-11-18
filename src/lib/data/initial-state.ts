@@ -9,6 +9,7 @@ export function emptyState(): FinanceState {
     import_batches: [],
     deleted_csv_hashes: [],
     recurring_subscriptions: [],
+    income_sources: [],
     categorization_rules: [],
   };
 }

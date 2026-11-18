@@ -338,6 +338,7 @@ export function applyImport(
       locked_fields: [],
       is_ignored: false,
       subscription_id: subscriptionId,
+      income_source_id: null,
       notes: "",
       installment_group_id: row.installmentGroupId,
       installment_current: row.installment?.current ?? null,
