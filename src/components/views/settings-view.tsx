@@ -87,11 +87,11 @@ export function SettingsView() {
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="display-name">Nome exibido</Label>
-            <Input id="display-name" className="w-60" value={name} onChange={(event) => setName(event.target.value)} />
+            <Input id="display-name" className="w-full sm:w-60" value={name} onChange={(event) => setName(event.target.value)} />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="closing-day">Dia de fechamento</Label>
-            <Input id="closing-day" type="number" min={1} max={28} className="num w-28" value={closingDay} onChange={(event) => setClosingDay(event.target.value)} />
+            <Input id="closing-day" type="number" inputMode="numeric" min={1} max={28} className="num w-28" value={closingDay} onChange={(event) => setClosingDay(event.target.value)} />
           </div>
           <Button onClick={saveProfile}>Salvar</Button>
         </CardContent>

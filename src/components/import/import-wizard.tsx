@@ -251,8 +251,8 @@ export function ImportWizard({ onFinished, compact = false }: { onFinished?: () 
           ) : null}
 
           <div className="overflow-hidden rounded-xl border">
-            <div className={cn("overflow-auto", compact ? "max-h-[38vh]" : "max-h-[52vh]")}>
-              <Table>
+            <div className={cn("overflow-auto overscroll-contain", compact ? "max-h-[38dvh]" : "max-h-[52dvh]")}>
+              <Table className="min-w-[640px]">
                 <TableHeader className="sticky top-0 z-10 bg-card">
                   <TableRow>
                     <TableHead className="w-28">Status</TableHead>

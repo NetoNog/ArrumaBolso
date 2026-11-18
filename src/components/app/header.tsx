@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Menu, Plus, Upload } from "lucide-react";
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Plus, Upload } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
@@ -14,42 +14,44 @@ import { duplicateCandidates } from "@/lib/finance/metrics";
 import { formatBRL } from "@/lib/money";
 import { useFinance } from "@/lib/store/finance-store";
 
-export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
+export function Header() {
   const pathname = usePathname();
   const item = findNavItem(pathname);
   const { openCreate, openImport } = useDialogs();
   const { status } = useFinance();
+  const ready = status === "ready";
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <Button variant="outline" size="icon" className="lg:hidden" aria-label="Abrir menu" onClick={onOpenMenu}>
-          <Menu />
-        </Button>
+    <header className="sticky top-0 z-30 border-b bg-background/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">{item.title}</h1>
+          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl dark:text-zinc-50">{item.title}</h1>
           <p className="hidden truncate text-sm text-slate-500 sm:block dark:text-zinc-400">{item.subtitle}</p>
         </div>
-        <div className={cn("flex w-full flex-wrap items-center gap-2 sm:w-auto", status !== "ready" && "invisible")}>
-          <MonthSwitcher />
-          <Button variant="outline" onClick={() => openCreate()} className="h-9">
-            <Plus /> <span className="hidden sm:inline">Novo Gasto</span>
+        <div className={cn("flex items-center gap-2", !ready && "invisible")}>
+          <MonthSwitcher className="hidden sm:flex" />
+          {/* Below lg the bottom navigation carries the "new expense" action. */}
+          <Button variant="outline" onClick={() => openCreate()} className="hidden h-9 lg:inline-flex">
+            <Plus /> Novo Gasto
           </Button>
           <AlertsBell />
-          <Button onClick={openImport} className="h-9 bg-blue-600 font-medium text-white hover:bg-blue-700">
+          <Button onClick={openImport} className="h-9 bg-blue-600 font-medium text-white hover:bg-blue-700" aria-label="Importar CSV">
             <Upload /> <span className="hidden sm:inline">Importar CSV</span>
           </Button>
         </div>
+      </div>
+      <div className={cn("px-4 pb-3 sm:hidden", !ready && "invisible")}>
+        <MonthSwitcher className="w-full" />
       </div>
     </header>
   );
 }
 
-function MonthSwitcher() {
+function MonthSwitcher({ className }: { className?: string }) {
   const { selectedMonth, setSelectedMonth, currentMonth } = useFinance();
   const isCurrent = selectedMonth === currentMonth;
   return (
-    <div className="flex h-9 items-center rounded-lg border bg-card shadow-panel">
+    <div className={cn("flex h-9 items-center justify-between rounded-lg border bg-card shadow-panel pointer-coarse:h-11", className)}>
       <Button variant="ghost" size="icon-sm" aria-label="Fatura anterior" onClick={() => setSelectedMonth(addMonths(selectedMonth, -1))}>
         <ChevronLeft />
       </Button>
@@ -90,7 +92,7 @@ function AlertsBell() {
           </span>
         ) : null}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))] p-0">
         <div className="flex items-center justify-between border-b px-3 py-2.5">
           <p className="text-sm font-semibold">Pendentes de revisão</p>
           <Pill tone={groups.length ? "rose" : "emerald"}>{groups.length ? `${groups.length} ativo(s)` : "Tudo certo"}</Pill>

@@ -193,7 +193,8 @@ export function TransactionsTable({
       </CardHeader>
 
       <CardContent className="grid gap-3 px-0 pt-3">
-        <div className="flex flex-wrap items-center gap-1.5 px-4">
+        {/* Phones: one swipeable row of chips instead of several wrapped lines. */}
+        <div className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] md:flex-wrap [&::-webkit-scrollbar]:hidden">
           {QUICK_FILTERS.map((filter) => (
             <button
               key={filter.key}
@@ -204,7 +205,7 @@ export function TransactionsTable({
               }}
               aria-pressed={quick === filter.key}
               className={cn(
-                "inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors",
+                "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium whitespace-nowrap transition-colors pointer-coarse:h-9",
                 quick === filter.key
                   ? "border-nav-active bg-nav-active text-nav-active-foreground"
                   : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -217,12 +218,14 @@ export function TransactionsTable({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 px-4">
-          <div className="relative min-w-48 flex-1">
+          <div className="relative basis-full sm:min-w-48 sm:flex-1 sm:basis-auto">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por loja, título ou nota"
+              type="search"
+              enterKeyHint="search"
               className="h-8 pl-8"
               aria-label="Buscar lançamentos"
             />
@@ -235,10 +238,17 @@ export function TransactionsTable({
                 onChange={(id) => setCategoryFilter(id ?? ALL_CATEGORIES)}
                 placeholder="Todas as categorias"
                 size="sm"
-                className="w-44"
+                className="min-w-0 flex-1 sm:w-44 sm:flex-none"
                 ariaLabel="Filtrar por categoria"
               />
-              <SimpleSelect value={methodFilter} options={METHOD_FILTER_OPTIONS} onChange={setMethodFilter} size="sm" className="w-40" ariaLabel="Filtrar por método" />
+              <SimpleSelect
+                value={methodFilter}
+                options={METHOD_FILTER_OPTIONS}
+                onChange={setMethodFilter}
+                size="sm"
+                className="min-w-0 flex-1 sm:w-40 sm:flex-none"
+                ariaLabel="Filtrar por método"
+              />
             </>
           ) : null}
           <div className="flex items-center gap-1">
@@ -283,7 +293,24 @@ export function TransactionsTable({
           </div>
         ) : null}
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y border-t md:hidden" aria-label="Lançamentos">
+          {visible.map((tx) => (
+            <MobileTransactionRow
+              key={tx.id}
+              tx={tx}
+              categoryName={tx.category_id ? categoriesById.get(tx.category_id)?.name : undefined}
+              showMonth={showMonth}
+              isDuplicate={duplicateIds.has(tx.id)}
+              selected={selected.has(tx.id)}
+              onSelect={(checked) => toggle(tx.id, checked)}
+              onEdit={() => openEdit(tx.id)}
+              onDelete={() => openDelete([tx.id])}
+            />
+          ))}
+          {visible.length === 0 ? <EmptyRows /> : null}
+        </ul>
+
+        <div className="hidden overflow-x-auto md:block">
           <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -328,16 +355,7 @@ export function TransactionsTable({
                         {tx.clean_title}
                       </span>
                       <span className="flex flex-wrap items-center gap-1 pt-0.5">
-                        {tx.installment_total ? (
-                          <Pill tone="blue">
-                            Parcela {tx.installment_current}/{tx.installment_total}
-                          </Pill>
-                        ) : null}
-                        {tx.subscription_id ? <Pill tone="violet">Assinatura</Pill> : null}
-                        {duplicateIds.has(tx.id) ? <Pill tone="amber">Duplicidade?</Pill> : null}
-                        {tx.type === "payment" ? <Pill tone="sky">Pagamento</Pill> : null}
-                        {tx.type === "income" ? <Pill tone="emerald">Receita</Pill> : null}
-                        {tx.is_ignored ? <Pill tone="slate">Ignorado</Pill> : null}
+                        <TransactionPills tx={tx} isDuplicate={duplicateIds.has(tx.id)} />
                         {tx.notes ? <span className="max-w-[200px] truncate text-[11px] text-muted-foreground">“{tx.notes}”</span> : null}
                       </span>
                     </button>
@@ -359,15 +377,8 @@ export function TransactionsTable({
                   <TableCell>
                     <SourceBadge tx={tx} />
                   </TableCell>
-                  <TableCell
-                    className={cn(
-                      "num text-right font-medium",
-                      tx.type === "payment" && "text-emerald-600",
-                      tx.type === "income" && "text-emerald-600",
-                    )}
-                  >
-                    {tx.type === "income" ? "+" : ""}
-                    {formatBRL(tx.amount)}
+                  <TableCell className={cn("num text-right font-medium", tx.type !== "expense" && "text-emerald-600")}>
+                    <SignedAmount tx={tx} />
                   </TableCell>
                   <TableCell className="pr-4">
                     <RowActions tx={tx} onEdit={() => openEdit(tx.id)} onDelete={() => openDelete([tx.id])} />
@@ -377,8 +388,7 @@ export function TransactionsTable({
               {visible.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="py-12 text-center">
-                    <p className="text-sm font-medium">Nenhum lançamento encontrado</p>
-                    <p className="text-xs text-muted-foreground">Ajuste os filtros ou crie um novo gasto.</p>
+                    <EmptyMessage />
                   </TableCell>
                 </TableRow>
               ) : null}
@@ -401,6 +411,95 @@ export function TransactionsTable({
     </Card>
   );
 
+}
+
+function TransactionPills({ tx, isDuplicate }: { tx: Transaction; isDuplicate: boolean }) {
+  return (
+    <>
+      {tx.installment_total ? (
+        <Pill tone="blue">
+          Parcela {tx.installment_current}/{tx.installment_total}
+        </Pill>
+      ) : null}
+      {tx.subscription_id ? <Pill tone="violet">Assinatura</Pill> : null}
+      {isDuplicate ? <Pill tone="amber">Duplicidade?</Pill> : null}
+      {tx.type === "payment" ? <Pill tone="sky">Pagamento</Pill> : null}
+      {tx.type === "income" ? <Pill tone="emerald">Receita</Pill> : null}
+      {tx.is_ignored ? <Pill tone="slate">Ignorado</Pill> : null}
+    </>
+  );
+}
+
+function SignedAmount({ tx }: { tx: Transaction }) {
+  return (
+    <>
+      {tx.type === "income" ? "+" : ""}
+      {formatBRL(tx.amount)}
+    </>
+  );
+}
+
+function EmptyMessage() {
+  return (
+    <>
+      <p className="text-sm font-medium">Nenhum lançamento encontrado</p>
+      <p className="text-xs text-muted-foreground">Ajuste os filtros ou crie um novo gasto.</p>
+    </>
+  );
+}
+
+function EmptyRows() {
+  return (
+    <li className="px-4 py-12 text-center">
+      <EmptyMessage />
+    </li>
+  );
+}
+
+/** Phone layout of a transaction: tap to edit, checkbox for bulk actions, menu for the rest. */
+function MobileTransactionRow({
+  tx,
+  categoryName,
+  showMonth,
+  isDuplicate,
+  selected,
+  onSelect,
+  onEdit,
+  onDelete,
+}: {
+  tx: Transaction;
+  categoryName: string | undefined;
+  showMonth: boolean;
+  isDuplicate: boolean;
+  selected: boolean;
+  onSelect: (checked: boolean) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const meta = [
+    formatDateBR(tx.date),
+    showMonth ? `Fatura ${formatMonthLabel(tx.invoice_month)}` : null,
+    tx.type === "payment" ? null : (categoryName ?? "Sem categoria"),
+  ].filter(Boolean);
+
+  return (
+    <li className={cn("flex items-start gap-3 py-3 pr-2 pl-4", selected && "bg-blue-50/70 dark:bg-blue-500/10", tx.is_ignored && "opacity-55")}>
+      <Checkbox className="mt-1" aria-label={`Selecionar ${tx.clean_title}`} checked={selected} onCheckedChange={onSelect} />
+      <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left transition-opacity active:opacity-60">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className={cn("truncate text-sm font-medium text-foreground", tx.is_ignored && "line-through")}>{tx.clean_title}</span>
+          <span className={cn("num shrink-0 text-sm font-semibold", tx.type !== "expense" && "text-emerald-600")}>
+            <SignedAmount tx={tx} />
+          </span>
+        </span>
+        <span className="num mt-0.5 block truncate text-xs text-muted-foreground">{meta.join(" • ")}</span>
+        <span className="mt-1.5 flex flex-wrap items-center gap-1 empty:hidden">
+          <TransactionPills tx={tx} isDuplicate={isDuplicate} />
+        </span>
+      </button>
+      <RowActions tx={tx} onEdit={onEdit} onDelete={onDelete} />
+    </li>
+  );
 }
 
 function RowActions({ tx, onEdit, onDelete }: { tx: Transaction; onEdit: () => void; onDelete: () => void }) {

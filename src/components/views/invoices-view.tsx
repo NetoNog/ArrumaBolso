@@ -103,7 +103,38 @@ export function InvoicesView() {
           <CardTitle className="text-sm font-semibold">Histórico de faturas</CardTitle>
           <CardDescription>Selecione um ciclo para analisá-lo na Visão Geral.</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
+        <CardContent className="px-0">
+          <ul className="divide-y md:hidden" aria-label="Faturas">
+            {months.map((month) => {
+              const position = compareMonths(month, currentMonth);
+              return (
+                <li key={month}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMonth(month)}
+                    aria-current={month === selectedMonth}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-muted",
+                      month === selectedMonth && "bg-blue-50/60 dark:bg-blue-500/10",
+                    )}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{formatMonthLabel(month)}</span>
+                      <span className="num block text-xs text-muted-foreground">
+                        {expensesOfMonth(state, month).length} compra(s) • pago {formatBRL(paymentsTotal(state, month))}
+                      </span>
+                    </span>
+                    <span className="grid justify-items-end gap-1">
+                      <span className="num text-sm font-semibold">{formatBRL(invoiceTotal(state, month))}</span>
+                      <InvoiceStatus position={position} />
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -128,17 +159,23 @@ export function InvoicesView() {
                     <TableCell className="num text-right font-medium">{formatBRL(invoiceTotal(state, month))}</TableCell>
                     <TableCell className="num text-right text-emerald-600">{formatBRL(paymentsTotal(state, month))}</TableCell>
                     <TableCell className="pr-4 text-right">
-                      {position < 0 ? <Pill tone="slate">Fechada</Pill> : position === 0 ? <Pill tone="blue">Aberta</Pill> : <Pill tone="violet">Futura</Pill>}
+                      <InvoiceStatus position={position} />
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
+}
+
+function InvoiceStatus({ position }: { position: number }) {
+  if (position < 0) return <Pill tone="slate">Fechada</Pill>;
+  return position === 0 ? <Pill tone="blue">Aberta</Pill> : <Pill tone="violet">Futura</Pill>;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

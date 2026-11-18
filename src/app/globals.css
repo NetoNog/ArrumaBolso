@@ -144,6 +144,33 @@
   }
   html {
     @apply font-sans;
+    /* Mobile: no gray tap flash (every control has its own :active), no font
+       inflation in landscape, and no pull-to-refresh fighting the app's scroll. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  /* Fire clicks immediately: these elements never need double-tap zoom. */
+  button,
+  a,
+  [role="button"],
+  label {
+    touch-action: manipulation;
+  }
+  /* Controls are not content: long-press must not select their labels. */
+  button,
+  [role="button"],
+  [role="tab"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* iOS zooms into inputs under 16px and never zooms back out. */
+  @media (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
   }
 }
 
@@ -163,4 +190,9 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Space reserved below the content for the mobile bottom navigation. */
+@utility pb-bottom-nav {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }

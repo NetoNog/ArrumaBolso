@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { DialogsProvider, useDialogs } from "@/components/app/dialogs-provider";
 import { Header } from "@/components/app/header";
+import { MobileNav } from "@/components/app/mobile-nav";
 import { Sidebar } from "@/components/app/sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -31,15 +32,15 @@ function ShellLayout({ children }: { children: ReactNode }) {
         <Sidebar />
       </aside>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[270px] p-0" showCloseButton={false}>
+        <SheetContent side="left" className="w-[280px] max-w-[85vw] p-0" showCloseButton={false}>
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <Sidebar onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
 
       <div className="lg:pl-[250px]">
-        <Header onOpenMenu={() => setMobileOpen(true)} />
-        <main className="px-4 py-6 sm:px-6 lg:px-8">
+        <Header />
+        <main className="pb-bottom-nav px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-6">
           {status === "loading" ? (
             <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="size-5 animate-spin" />
@@ -59,6 +60,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
           )}
         </main>
       </div>
+      <MobileNav onOpenMenu={() => setMobileOpen(true)} />
     </div>
   );
 }

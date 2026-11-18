@@ -9,7 +9,7 @@ export function ImportWizardDialog({ open, onOpenChange }: { open: boolean; onOp
   const router = useRouter();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Importar CSV do Nubank</DialogTitle>
           <DialogDescription>

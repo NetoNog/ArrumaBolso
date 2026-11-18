@@ -30,7 +30,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full flex-col bg-sidebar pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
         <Link href="/" onClick={onNavigate} aria-label="ArrumaBolso — Visão Geral" className="rounded-md">
           <BrandLogo height={22} />

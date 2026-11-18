@@ -59,7 +59,7 @@ export function ProjectionView() {
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="income">Renda mensal esperada (R$)</Label>
-            <Input id="income" inputMode="decimal" className="num w-44" value={incomeText} onChange={(event) => setIncomeText(event.target.value)} />
+            <Input id="income" inputMode="decimal" enterKeyHint="done" className="num w-44" value={incomeText} onChange={(event) => setIncomeText(event.target.value)} />
           </div>
           <Button
             variant="outline"
@@ -75,7 +75,7 @@ export function ProjectionView() {
           >
             Salvar renda
           </Button>
-          <p className="ml-auto text-xs text-muted-foreground">
+          <p className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">
             Teto mensal das categorias: <span className="num font-medium text-foreground">{formatBRL(budget)}</span>
           </p>
         </CardContent>
@@ -91,7 +91,42 @@ export function ProjectionView() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
+        <CardContent className="px-0">
+          <ul className="divide-y md:hidden" aria-label="Projeção mensal">
+            {rows.map((row) => (
+              <li key={row.month}>
+                <button
+                  type="button"
+                  onClick={() => setOpenMonth(row.month)}
+                  className="grid w-full gap-1.5 px-4 py-3 text-left transition-colors active:bg-muted"
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {formatMonthLabel(row.month)}
+                      {row.month === currentMonth ? <Pill tone="blue">Atual</Pill> : null}
+                    </span>
+                    <span className={cn("num text-sm font-semibold", row.free < 0 ? "text-rose-600" : "text-foreground")}>
+                      Folga {formatBRL(row.free)}
+                    </span>
+                  </span>
+                  <span className="num flex justify-between gap-3 text-xs text-muted-foreground">
+                    <span>Comprometido {formatBRL(row.expected)}</span>
+                    <span className="text-emerald-600">Renda {formatBRL(row.monthIncome)}</span>
+                  </span>
+                  <span className="num text-[11px] text-muted-foreground">
+                    Parcelas {formatBRL(row.commitment.installments)} • Assinaturas {formatBRL(row.commitment.subscriptions)} • Agendados{" "}
+                    {formatBRL(row.commitment.scheduled)}
+                  </span>
+                </button>
+              </li>
+            ))}
+            <li className="num flex justify-between gap-3 bg-muted/40 px-4 py-3 text-sm font-semibold">
+              <span>12 meses</span>
+              <span>Folga {formatBRL(sumMoney(rows.map((row) => row.free)))}</span>
+            </li>
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
           <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
@@ -139,11 +174,12 @@ export function ProjectionView() {
               </TableRow>
             </TableFooter>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
       <Sheet open={openMonth !== null} onOpenChange={(open) => !open && setOpenMonth(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+        <SheetContent className="w-full overflow-y-auto overscroll-contain pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] sm:max-w-md">
           {openMonth ? (
             <>
               <SheetHeader>

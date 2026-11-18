@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
@@ -13,6 +13,21 @@ const jetbrainsMono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subset
 export const metadata: Metadata = {
   title: "ArrumaBolso — Inteligência Financeira Pessoal",
   description: "Faturas, parcelas, assinaturas e projeção de 12 meses em um painel só.",
+  appleWebApp: { capable: true, title: "ArrumaBolso", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Paint under the notch/home indicator; fixed bars pad themselves with env(safe-area-inset-*).
+  viewportFit: "cover",
+  // Android: the keyboard shrinks the layout so bottom-pinned UI stays visible.
+  interactiveWidget: "resizes-content",
+  // Matches --background so the status bar blends into the header.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -22,7 +37,13 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <TooltipProvider>
             {children}
-            <Toaster position="bottom-right" richColors closeButton />
+            <Toaster
+              position="bottom-right"
+              richColors
+              closeButton
+              // Above the mobile bottom navigation and the home indicator.
+              mobileOffset={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))" }}
+            />
           </TooltipProvider>
         </ThemeProvider>
       </body>

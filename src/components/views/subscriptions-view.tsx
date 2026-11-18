@@ -3,6 +3,7 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { cn } from "cn";
 
 import { CategoryIcon } from "@/components/common/category-icon";
 import { CategorySelect } from "@/components/common/category-select";
@@ -36,6 +37,12 @@ export function SubscriptionsView() {
   const [editing, setEditing] = useState<Editing>({ open: false });
   const [removing, setRemoving] = useState<RecurringSubscription | null>(null);
   const categoriesById = new Map(state.categories.map((category) => [category.id, category]));
+  const lastChargeOf = (sub: RecurringSubscription) =>
+    state.transactions.filter((tx) => tx.subscription_id === sub.id).sort((a, b) => b.date.localeCompare(a.date))[0];
+  const toggleActive = (sub: RecurringSubscription, checked: boolean) => {
+    commit((current) => upsertSubscription(current, { ...sub, active: checked }));
+    toast.success(checked ? "Assinatura ativada" : "Assinatura pausada", { description: sub.title });
+  };
 
   const active = state.recurring_subscriptions.filter((sub) => sub.active);
   const monthly = sumMoney(active.map((sub) => sub.expected_amount));
@@ -58,7 +65,47 @@ export function SubscriptionsView() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
+        <CardContent className="px-0">
+          <ul className="divide-y md:hidden" aria-label="Assinaturas">
+            {state.recurring_subscriptions.map((sub) => {
+              const category = sub.category_id ? categoriesById.get(sub.category_id) : undefined;
+              const last = lastChargeOf(sub);
+              return (
+                <li key={sub.id} className={cn("flex items-center gap-3 py-3 pr-2 pl-4", !sub.active && "opacity-60")}>
+                  {category ? <CategoryIcon icon={category.icon} color={category.color} /> : null}
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ open: true, subscription: sub })}
+                    className="min-w-0 flex-1 text-left transition-opacity active:opacity-60"
+                  >
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="truncate text-sm font-medium">{sub.title}</span>
+                      <span className="num shrink-0 text-sm font-semibold">{formatBRL(sub.expected_amount)}</span>
+                    </span>
+                    <span className="num mt-0.5 block truncate text-xs text-muted-foreground">
+                      Dia {sub.billing_day}
+                      {last ? ` • última ${formatDateBR(last.date)}` : " • sem cobrança vinculada"}
+                    </span>
+                  </button>
+                  <Switch
+                    checked={sub.active}
+                    aria-label={sub.active ? `Pausar ${sub.title}` : `Ativar ${sub.title}`}
+                    onCheckedChange={(checked) => toggleActive(sub, checked)}
+                  />
+                  <Button variant="ghost" size="icon-sm" aria-label={`Remover ${sub.title}`} onClick={() => setRemoving(sub)}>
+                    <Trash2 />
+                  </Button>
+                </li>
+              );
+            })}
+            {state.recurring_subscriptions.length === 0 ? (
+              <li className="px-4 py-10 text-center text-sm text-muted-foreground">
+                Nenhuma assinatura. Use “Marcar como Assinatura” em um lançamento ou crie uma nova.
+              </li>
+            ) : null}
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
           <Table className="min-w-[720px]">
             <TableHeader>
               <TableRow>
@@ -74,8 +121,7 @@ export function SubscriptionsView() {
             <TableBody>
               {state.recurring_subscriptions.map((sub) => {
                 const category = sub.category_id ? categoriesById.get(sub.category_id) : undefined;
-                const charges = state.transactions.filter((tx) => tx.subscription_id === sub.id).sort((a, b) => b.date.localeCompare(a.date));
-                const last = charges[0];
+                const last = lastChargeOf(sub);
                 const drift = last ? Math.abs(last.amount) - sub.expected_amount : 0;
                 return (
                   <TableRow key={sub.id} className={sub.active ? undefined : "opacity-60"}>
@@ -107,10 +153,7 @@ export function SubscriptionsView() {
                       <Switch
                         checked={sub.active}
                         aria-label={sub.active ? `Pausar ${sub.title}` : `Ativar ${sub.title}`}
-                        onCheckedChange={(checked) => {
-                          commit((current) => upsertSubscription(current, { ...sub, active: checked }));
-                          toast.success(checked ? "Assinatura ativada" : "Assinatura pausada", { description: sub.title });
-                        }}
+                        onCheckedChange={(checked) => toggleActive(sub, checked)}
                       />
                     </TableCell>
                     <TableCell className="pr-4 text-right">
@@ -133,6 +176,7 @@ export function SubscriptionsView() {
               ) : null}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -221,7 +265,7 @@ function SubscriptionForm({ subscription, onDone }: { subscription: RecurringSub
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="sub-day">Dia de cobrança</Label>
-          <Input id="sub-day" type="number" min={1} max={31} className="num" value={day} onChange={(event) => setDay(event.target.value)} />
+          <Input id="sub-day" type="number" inputMode="numeric" min={1} max={31} className="num" value={day} onChange={(event) => setDay(event.target.value)} />
         </div>
       </div>
       <div className="grid gap-1.5">

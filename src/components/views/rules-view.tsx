@@ -25,6 +25,13 @@ export function RulesView() {
   const categoriesById = new Map(state.categories.map((category) => [category.id, category]));
   const rules = [...state.categorization_rules].sort((a, b) => b.priority - a.priority);
 
+  const removeRule = (rule: CategorizationRule) => {
+    commit((current) => deleteRule(current, rule.id));
+    toast.success("Regra excluída", {
+      action: { label: "Desfazer", onClick: () => commit((current) => upsertRule(current, rule)) },
+    });
+  };
+
   const matches = (rule: CategorizationRule) =>
     state.transactions.filter((tx) => tx.raw_title.toLowerCase().includes(rule.pattern.toLowerCase())).length;
 
@@ -37,7 +44,7 @@ export function RulesView() {
             Cada regra procura o padrão no título original do CSV (sem diferenciar maiúsculas). Maior prioridade vence. Prefixos como
             “Pix no Crédito -”, “Mp *”, “Ifd*” e “99food *” já são limpos automaticamente.
           </CardDescription>
-          <CardAction className="flex gap-2">
+          <CardAction className="flex flex-col gap-2 sm:flex-row">
             <Button
               size="sm"
               variant="outline"
@@ -60,7 +67,40 @@ export function RulesView() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
+        <CardContent className="px-0">
+          <ul className="divide-y md:hidden" aria-label="Regras">
+            {rules.map((rule) => {
+              const category = rule.category_id ? categoriesById.get(rule.category_id) : undefined;
+              return (
+                <li key={rule.id} className="flex items-center gap-3 py-3 pr-2 pl-4">
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ open: true, rule })}
+                    className="min-w-0 flex-1 text-left transition-opacity active:opacity-60"
+                  >
+                    <span className="num block truncate text-sm font-medium">{rule.pattern}</span>
+                    <span className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                      {category ? <CategoryIcon icon={category.icon} color={category.color} /> : null}
+                      {category?.name ?? "Sem categoria"} • {rule.clean_name_override ?? "nome automático"}
+                    </span>
+                    <span className="num mt-0.5 block text-[11px] text-muted-foreground">
+                      Prioridade {rule.priority} • {matches(rule)} ocorrência(s)
+                    </span>
+                  </button>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Excluir regra ${rule.pattern}`} onClick={() => removeRule(rule)}>
+                    <Trash2 />
+                  </Button>
+                </li>
+              );
+            })}
+            {rules.length === 0 ? (
+              <li className="px-4 py-10 text-center text-sm text-muted-foreground">
+                Nenhuma regra. Ao mudar a categoria de um item do CSV, use “Salvar regra” no aviso.
+              </li>
+            ) : null}
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
           <Table className="min-w-[680px]">
             <TableHeader>
               <TableRow>
@@ -98,12 +138,7 @@ export function RulesView() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Excluir regra ${rule.pattern}`}
-                        onClick={() => {
-                          commit((current) => deleteRule(current, rule.id));
-                          toast.success("Regra excluída", {
-                            action: { label: "Desfazer", onClick: () => commit((current) => upsertRule(current, rule)) },
-                          });
-                        }}
+                        onClick={() => removeRule(rule)}
                       >
                         <Trash2 />
                       </Button>
@@ -120,6 +155,7 @@ export function RulesView() {
               ) : null}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -172,7 +208,7 @@ function RuleForm({ rule, onDone }: { rule: CategorizationRule | null; onDone: (
       </DialogHeader>
       <div className="grid gap-1.5">
         <Label htmlFor="rule-pattern">Título contém</Label>
-        <Input id="rule-pattern" className="num" value={pattern} onChange={(event) => setPattern(event.target.value)} placeholder="ex.: ifd*" autoFocus />
+        <Input id="rule-pattern" className="num" autoCapitalize="none" autoCorrect="off" value={pattern} onChange={(event) => setPattern(event.target.value)} placeholder="ex.: ifd*" autoFocus />
         <p className="text-xs text-muted-foreground">{needle ? `${sample.length} lançamento(s) existentes casam com este padrão.` : " "}</p>
       </div>
       <div className="grid gap-1.5">
@@ -186,7 +222,7 @@ function RuleForm({ rule, onDone }: { rule: CategorizationRule | null; onDone: (
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="rule-priority">Prioridade</Label>
-          <Input id="rule-priority" type="number" className="num" value={priority} onChange={(event) => setPriority(event.target.value)} />
+          <Input id="rule-priority" type="number" inputMode="numeric" className="num" value={priority} onChange={(event) => setPriority(event.target.value)} />
         </div>
       </div>
       {preview && sample[0] ? (

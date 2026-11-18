@@ -287,6 +287,7 @@ function TransactionForm({
               <Input
                 id="tx-installments"
                 type="number"
+                inputMode="numeric"
                 min={2}
                 max={48}
                 className="num"
