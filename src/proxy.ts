@@ -1,13 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getSupabaseEnv } from "@/lib/supabase/env";
+
 const LOGIN_PATH = "/login";
 /** Routes reachable without a session. */
-const PUBLIC_PATHS = new Set([LOGIN_PATH, "/marca"]);
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const PUBLIC_PATHS = new Set([LOGIN_PATH, "/marca", "/auth/callback"]);
 
 /**
  * Optimistic auth gate: refreshes the Supabase session cookies and sends
@@ -18,13 +16,14 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.has(pathname);
 
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
+  const env = getSupabaseEnv();
+  if (!env) {
     // Without a backend there is no way to sign in: everything leads to the login screen.
     return isPublic ? NextResponse.next() : redirectTo(request, LOGIN_PATH);
   }
 
   let response = NextResponse.next({ request });
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+  const supabase = createServerClient(env.url, env.key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookiesToSet) => {
