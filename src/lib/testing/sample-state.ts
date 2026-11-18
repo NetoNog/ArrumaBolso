@@ -143,7 +143,14 @@ export async function buildSampleState(): Promise<FinanceState> {
   }));
 
   let state: FinanceState = {
-    settings: { display_name: "Minha Carteira", closing_day: 2, monthly_income: 4800, dismissed_alerts: [] },
+    settings: {
+      display_name: "Minha Carteira",
+      avatar_style: null,
+      avatar_seed: null,
+      closing_day: 2,
+      monthly_income: 4800,
+      dismissed_alerts: [],
+    },
     categories,
     transactions: [],
     import_batches: [],

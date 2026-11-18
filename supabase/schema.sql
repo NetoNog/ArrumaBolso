@@ -11,6 +11,9 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null default 'Minha Carteira',
+  -- Profile picture: DiceBear style id + seed (null = initials).
+  avatar_style text check (avatar_style is null or avatar_style ~ '^[a-z0-9-]{1,40}$'),
+  avatar_seed text check (avatar_seed is null or char_length(avatar_seed) between 1 and 120),
   closing_day smallint not null default 2 check (closing_day between 1 and 28),
   monthly_income numeric(12, 2) not null default 0 check (monthly_income >= 0),
   dismissed_alerts text[] not null default '{}',

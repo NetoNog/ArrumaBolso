@@ -59,6 +59,8 @@ export function parseFinanceState(input: unknown): FinanceState | null {
   const state = value as unknown as FinanceState;
   return {
     ...state,
+    // Backups made before profile pictures existed have no avatar.
+    settings: { ...state.settings, avatar_style: state.settings.avatar_style ?? null, avatar_seed: state.settings.avatar_seed ?? null },
     transactions: state.transactions.map((tx) => ({ ...tx, income_source_id: tx.income_source_id ?? null })),
   };
 }
@@ -138,7 +140,7 @@ export class SupabaseRepository implements FinanceRepository {
   async load(): Promise<FinanceState | null> {
     const { data: profile, error } = await this.client
       .from("profiles")
-      .select("display_name, closing_day, monthly_income, dismissed_alerts")
+      .select("display_name, avatar_style, avatar_seed, closing_day, monthly_income, dismissed_alerts")
       .eq("id", this.userId)
       .maybeSingle();
     if (error) throw new Error(`Falha ao carregar perfil: ${error.message}`);
@@ -161,6 +163,8 @@ export class SupabaseRepository implements FinanceRepository {
     return {
       settings: {
         display_name: profile?.display_name ?? "Minha Carteira",
+        avatar_style: profile?.avatar_style ?? null,
+        avatar_seed: profile?.avatar_seed ?? null,
         closing_day: profile?.closing_day ?? 2,
         monthly_income: Number(profile?.monthly_income ?? 0),
         dismissed_alerts: profile?.dismissed_alerts ?? [],

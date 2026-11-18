@@ -1,7 +1,6 @@
 "use client";
 
-import { Cloud, Download, LogOut, Palette, Upload } from "lucide-react";
-import Link from "next/link";
+import { Cloud, Download, Upload } from "lucide-react";
 import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +13,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SignOutButton } from "@/components/app/sign-out-button";
+import { UserAvatar } from "@/components/common/user-avatar";
+import { AvatarPicker, toAvatarChoice, type AvatarChoice } from "@/components/settings/avatar-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,22 +23,35 @@ import { Label } from "@/components/ui/label";
 import { emptyState } from "@/lib/data/initial-state";
 import { parseFinanceState } from "@/lib/data/repository";
 import { updateSettings } from "@/lib/domain/operations";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useFinance } from "@/lib/store/finance-store";
+
+const NICKNAME_MAX = 40;
 
 export function SettingsView() {
   const { state, commit, replaceState, userEmail } = useFinance();
   const [name, setName] = useState(state.settings.display_name);
+  const [avatar, setAvatar] = useState<AvatarChoice | null>(() =>
+    toAvatarChoice(state.settings.avatar_style, state.settings.avatar_seed),
+  );
   const [closingDay, setClosingDay] = useState(String(state.settings.closing_day));
   const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function saveProfile() {
+    const nickname = name.trim();
+    if (!nickname) return toast.error("Informe um apelido");
+    if (nickname.length > NICKNAME_MAX) return toast.error(`O apelido pode ter até ${NICKNAME_MAX} caracteres`);
+    commit((current) =>
+      updateSettings(current, { display_name: nickname, avatar_style: avatar?.style ?? null, avatar_seed: avatar?.seed ?? null }),
+    );
+    toast.success("Perfil atualizado");
+  }
+
+  function saveCycle() {
     const day = Number(closingDay);
-    if (!name.trim()) return toast.error("Informe um nome");
     if (!Number.isInteger(day) || day < 1 || day > 28) return toast.error("Dia de fechamento entre 1 e 28");
-    commit((current) => updateSettings(current, { display_name: name.trim(), closing_day: day }));
-    toast.success("Preferências salvas");
+    commit((current) => updateSettings(current, { closing_day: day }));
+    toast.success("Ciclo da fatura salvo");
   }
 
   function exportBackup() {
@@ -66,34 +81,50 @@ export function SettingsView() {
     }
   }
 
-  async function signOut() {
-    const client = getSupabaseBrowserClient();
-    if (!client) return;
-    const { error } = await client.auth.signOut();
-    if (error) {
-      toast.error("Falha ao sair", { description: error.message });
-      return;
-    }
-    window.location.assign(new URL("/login", window.location.origin));
-  }
-
   return (
     <div className="grid max-w-3xl gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Perfil e ciclo da fatura</CardTitle>
+          <CardTitle className="text-sm font-semibold">Perfil</CardTitle>
+          <CardDescription>Como você aparece no ArrumaBolso. Os avatares são gerados pelo DiceBear.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <div className="flex items-center gap-4">
+            <UserAvatar name={name || "?"} style={avatar?.style ?? null} seed={avatar?.seed ?? null} size={72} />
+            <div className="grid min-w-0 flex-1 gap-1.5">
+              <Label htmlFor="nickname">Apelido</Label>
+              <Input
+                id="nickname"
+                className="w-full sm:w-72"
+                maxLength={NICKNAME_MAX}
+                autoComplete="nickname"
+                placeholder="Como quer ser chamado?"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <p className="text-sm font-medium">Foto de perfil</p>
+            <AvatarPicker name={name} value={avatar} onChange={setAvatar} />
+          </div>
+          <Button className="justify-self-start" onClick={saveProfile}>
+            Salvar perfil
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">Ciclo da fatura</CardTitle>
           <CardDescription>Compras feitas a partir do dia de fechamento entram na fatura do mês seguinte.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor="display-name">Nome exibido</Label>
-            <Input id="display-name" className="w-full sm:w-60" value={name} onChange={(event) => setName(event.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
             <Label htmlFor="closing-day">Dia de fechamento</Label>
             <Input id="closing-day" type="number" inputMode="numeric" min={1} max={28} className="num w-28" value={closingDay} onChange={(event) => setClosingDay(event.target.value)} />
           </div>
-          <Button onClick={saveProfile}>Salvar</Button>
+          <Button onClick={saveCycle}>Salvar</Button>
         </CardContent>
       </Card>
 
@@ -106,21 +137,7 @@ export function SettingsView() {
           <CardDescription>Conectado como {userEmail ?? "usuário"}. Seus dados ficam isolados por Row Level Security.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={signOut}>
-            <LogOut /> Sair
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">Marca</CardTitle>
-          <CardDescription>Logo, cores, tipografia e regras de uso do ArrumaBolso.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" nativeButton={false} render={<Link href="/marca" />}>
-            <Palette /> Identidade visual
-          </Button>
+          <SignOutButton />
         </CardContent>
       </Card>
 

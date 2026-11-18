@@ -6,17 +6,13 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "cn";
 
+import { UserAvatar } from "@/components/common/user-avatar";
 import { BrandLogo } from "@/components/brand/logo";
 import { NAV_GROUPS, SETTINGS_ITEM, type NavBadgeKey, type NavItem } from "@/components/app/navigation";
 import { useDialogs } from "@/components/app/dialogs-provider";
 import { Button } from "@/components/ui/button";
 import { activeInstallmentGroups } from "@/lib/finance/metrics";
 import { useFinance } from "@/lib/store/finance-store";
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "A") + (parts[1]?.[0] ?? "")).toUpperCase();
-}
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -35,10 +31,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Link href="/" onClick={onNavigate} aria-label="ArrumaBolso — Visão Geral" className="rounded-md">
           <BrandLogo height={22} />
         </Link>
-        <span className="ml-auto inline-flex h-5 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 text-[10.5px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          Ativo
-        </span>
       </div>
 
       <div className="px-3 pb-3">
@@ -74,9 +66,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="grid gap-2 border-t px-3 py-3">
         <NavLink item={SETTINGS_ITEM} active={pathname === SETTINGS_ITEM.href} onNavigate={onNavigate} />
         <div className="flex items-center gap-2.5 rounded-lg border bg-background p-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-500 text-xs font-semibold text-white">
-            {initials(state.settings.display_name)}
-          </span>
+          <UserAvatar
+            name={state.settings.display_name}
+            style={state.settings.avatar_style}
+            seed={state.settings.avatar_seed}
+            size={32}
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">{state.settings.display_name}</p>
             <p className="truncate text-[11px] text-muted-foreground">{userEmail ?? "Controle Pessoal"}</p>

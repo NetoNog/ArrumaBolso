@@ -107,7 +107,12 @@ export interface CategorizationRule {
 }
 
 export interface UserSettings {
+  /** Nickname shown in the app (the "Apelido"). */
   display_name: string;
+  /** DiceBear style id of the profile picture; `null` shows the initials. */
+  avatar_style: string | null;
+  /** Seed that selects one avatar within the style. */
+  avatar_seed: string | null;
   /** Day of the month on which the card invoice closes. */
   closing_day: number;
   /** Fallback expected income, used only while no income source is registered. */

@@ -29,7 +29,7 @@ interface FinanceContextValue {
 const FinanceContext = createContext<FinanceContextValue | null>(null);
 
 const PLACEHOLDER_STATE: FinanceState = {
-  settings: { display_name: "", closing_day: 2, monthly_income: 0, dismissed_alerts: [] },
+  settings: { display_name: "", avatar_style: null, avatar_seed: null, closing_day: 2, monthly_income: 0, dismissed_alerts: [] },
   categories: [],
   transactions: [],
   import_batches: [],

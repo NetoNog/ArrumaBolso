@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
 import { useDialogs } from "@/components/app/dialogs-provider";
+import { SignOutButton } from "@/components/app/sign-out-button";
 import { findNavItem } from "@/components/app/navigation";
 import { Pill } from "@/components/common/pill";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,10 @@ export function Header() {
             <Upload /> <span className="hidden sm:inline">Importar CSV</span>
           </Button>
         </div>
+        {/* Outside the ready gate: signing out must work even if the data failed to load. */}
+        <span aria-hidden="true" className="hidden h-6 w-px bg-border sm:block" />
+        <SignOutButton compact className="sm:hidden" />
+        <SignOutButton className="hidden sm:inline-flex" />
       </div>
       <div className={cn("px-4 pb-3 sm:hidden", !ready && "invisible")}>
         <MonthSwitcher className="w-full" />

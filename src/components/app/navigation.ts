@@ -119,7 +119,7 @@ export const SETTINGS_ITEM: NavItem = {
   label: "Configurações",
   icon: Settings,
   title: "Configurações",
-  subtitle: "Ciclo da fatura, armazenamento e backup",
+  subtitle: "Perfil, ciclo da fatura, conta e backup",
 };
 
 export function findNavItem(pathname: string): NavItem {
