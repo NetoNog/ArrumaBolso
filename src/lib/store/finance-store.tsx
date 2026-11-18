@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-import { buildSeedState } from "@/lib/data/seed";
+import { buildSeedState, emptyState } from "@/lib/data/seed";
 import { LocalStorageRepository, SupabaseRepository, type FinanceRepository } from "@/lib/data/repository";
 import { invoiceMonthForDate, todayIso } from "@/lib/dates";
 import type { FinanceState, InvoiceMonth, IsoDate } from "@/lib/domain/types";
@@ -63,9 +63,11 @@ function bootOnce(): Promise<BootResult> {
     const { repository, email } = await resolveRepository();
     const loaded = await repository.load();
     if (loaded) return { repository, email, state: loaded };
-    const seed = await buildSeedState();
-    await repository.save(null, seed);
-    return { repository, email, state: seed };
+    // Cloud accounts start empty (real data only); the local demo mode starts with
+    // the example invoice so visitors can explore without signing up.
+    const initial = repository.kind === "supabase" ? emptyState() : await buildSeedState();
+    await repository.save(null, initial);
+    return { repository, email, state: initial };
   })();
   bootPromise.catch(() => {
     bootPromise = null;

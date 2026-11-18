@@ -165,8 +165,10 @@ export class SupabaseRepository implements FinanceRepository {
       this.fetchAll<CategorizationRule>("categorization_rules"),
     ]);
 
+    // A profile row (created by the signup trigger) means the account exists, even
+    // with no data yet: return it as-is so an empty account is never re-initialised.
     const isEmpty = categories.length === 0 && transactions.length === 0 && rules.length === 0;
-    if (isEmpty) return null;
+    if (!profile && isEmpty) return null;
 
     return {
       settings: {
