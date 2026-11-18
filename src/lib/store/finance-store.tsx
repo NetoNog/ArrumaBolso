@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-import { buildSeedState, emptyState } from "@/lib/data/seed";
-import { LocalStorageRepository, SupabaseRepository, type FinanceRepository } from "@/lib/data/repository";
+import { emptyState } from "@/lib/data/initial-state";
+import { SupabaseRepository, type FinanceRepository } from "@/lib/data/repository";
 import { invoiceMonthForDate, todayIso } from "@/lib/dates";
 import type { FinanceState, InvoiceMonth, IsoDate } from "@/lib/domain/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -15,7 +15,6 @@ interface FinanceContextValue {
   status: Status;
   error: string | null;
   state: FinanceState;
-  storageKind: FinanceRepository["kind"];
   userEmail: string | null;
   today: IsoDate;
   currentMonth: InvoiceMonth;
@@ -25,7 +24,6 @@ interface FinanceContextValue {
   commit: (operation: (state: FinanceState) => FinanceState) => void;
   /** Replaces the whole state (used by reset/restore flows). */
   replaceState: (next: FinanceState) => void;
-  resetToSeed: () => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null);
@@ -40,13 +38,15 @@ const PLACEHOLDER_STATE: FinanceState = {
   categorization_rules: [],
 };
 
+/** Raised when there is no signed-in user; the app sends the visitor to the login screen. */
+class UnauthenticatedError extends Error {}
+
 async function resolveRepository(): Promise<{ repository: FinanceRepository; email: string | null }> {
   const client = getSupabaseBrowserClient();
-  if (client) {
-    const { data } = await client.auth.getUser();
-    if (data.user) return { repository: new SupabaseRepository(client, data.user.id), email: data.user.email ?? null };
-  }
-  return { repository: new LocalStorageRepository(), email: null };
+  if (!client) throw new UnauthenticatedError("Supabase não configurado.");
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) throw new UnauthenticatedError("Sessão expirada.");
+  return { repository: new SupabaseRepository(client, data.user.id), email: data.user.email ?? null };
 }
 
 interface BootResult {
@@ -57,15 +57,14 @@ interface BootResult {
 
 let bootPromise: Promise<BootResult> | null = null;
 
-/** Loads (or seeds) the data exactly once per page load, even under StrictMode. */
+/** Loads (or initialises) the data exactly once per page load, even under StrictMode. */
 function bootOnce(): Promise<BootResult> {
   bootPromise ??= (async () => {
     const { repository, email } = await resolveRepository();
     const loaded = await repository.load();
     if (loaded) return { repository, email, state: loaded };
-    // Cloud accounts start empty (real data only); the local demo mode starts with
-    // the example invoice so visitors can explore without signing up.
-    const initial = repository.kind === "supabase" ? emptyState() : await buildSeedState();
+    // Every account starts empty: the user feeds the system with their own data.
+    const initial = emptyState();
     await repository.save(null, initial);
     return { repository, email, state: initial };
   })();
@@ -83,7 +82,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [today, setToday] = useState<IsoDate>("1970-01-01");
   const [selectedMonth, setSelectedMonth] = useState<InvoiceMonth | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [storageKind, setStorageKind] = useState<FinanceRepository["kind"]>("local");
 
   const stateRef = useRef<FinanceState>(PLACEHOLDER_STATE);
   const repositoryRef = useRef<FinanceRepository | null>(null);
@@ -97,7 +95,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         repositoryRef.current = repository;
         persistedRef.current = loaded;
-        setStorageKind(repository.kind);
         setUserEmail(email);
         setToday(todayIso());
         stateRef.current = loaded;
@@ -106,6 +103,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
+        if (cause instanceof UnauthenticatedError) {
+          window.location.replace(new URL("/login", window.location.origin));
+          return;
+        }
         setError(cause instanceof Error ? cause.message : "Erro desconhecido ao carregar os dados.");
         setStatus("error");
       });
@@ -149,11 +150,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [replaceState],
   );
 
-  const resetToSeed = useCallback(async () => {
-    const seed = await buildSeedState();
-    replaceState(seed);
-  }, [replaceState]);
-
   const currentMonth = invoiceMonthForDate(today, state.settings.closing_day);
 
   const value = useMemo<FinanceContextValue>(
@@ -161,7 +157,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       status,
       error,
       state,
-      storageKind,
       userEmail,
       today,
       currentMonth,
@@ -169,9 +164,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setSelectedMonth,
       commit,
       replaceState,
-      resetToSeed,
     }),
-    [status, error, state, storageKind, userEmail, today, currentMonth, selectedMonth, commit, replaceState, resetToSeed],
+    [status, error, state, userEmail, today, currentMonth, selectedMonth, commit, replaceState],
   );
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

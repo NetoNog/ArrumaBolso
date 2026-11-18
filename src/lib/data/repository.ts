@@ -15,7 +15,6 @@ import type {
  * repository to persist each new snapshot; implementations decide how to diff.
  */
 export interface FinanceRepository {
-  readonly kind: "local" | "supabase";
   load(): Promise<FinanceState | null>;
   save(previous: FinanceState | null, next: FinanceState): Promise<void>;
   clear(): Promise<void>;
@@ -52,33 +51,6 @@ export function parseFinanceState(value: unknown): FinanceState | null {
       typeof tx.invoice_month === "string",
   );
   return validTx ? (value as unknown as FinanceState) : null;
-}
-
-// ------------------------------------------------------------- localStorage
-
-const STORAGE_KEY = "arrumabolso:state:v1";
-
-export class LocalStorageRepository implements FinanceRepository {
-  readonly kind = "local" as const;
-
-  async load(): Promise<FinanceState | null> {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    try {
-      return parseFinanceState(JSON.parse(raw));
-    } catch {
-      // Corrupted payload: treated as "no data" so the app can re-seed.
-      return null;
-    }
-  }
-
-  async save(_previous: FinanceState | null, next: FinanceState): Promise<void> {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }
-
-  async clear(): Promise<void> {
-    window.localStorage.removeItem(STORAGE_KEY);
-  }
 }
 
 // ----------------------------------------------------------------- Supabase
@@ -131,8 +103,6 @@ const TABLES = {
 } as const;
 
 export class SupabaseRepository implements FinanceRepository {
-  readonly kind = "supabase" as const;
-
   constructor(
     private readonly client: SupabaseClient,
     private readonly userId: string,

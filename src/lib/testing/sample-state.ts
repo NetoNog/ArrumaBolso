@@ -1,3 +1,7 @@
+/**
+ * Test fixture only: a realistic two-invoice state used by the parser and
+ * reconciliation tests. Never loaded by the app.
+ */
 import type {
   CategorizationRule,
   Category,
@@ -9,7 +13,7 @@ import { newId } from "@/lib/hash";
 import { applyImport, parseNubankCsv, reconcile } from "@/lib/nubank-parser";
 
 /** Invoice Nov/2026 (cycle 02/10 – 01/11): 20 purchases totalling R$ 1.012,67. */
-export const SEED_CSV_NOV_2026 = `date,title,amount
+export const SAMPLE_CSV_NOV_2026 = `date,title,amount
 2026-10-03,Totalpass,99.90
 2026-10-04,Economiafarma - Parcela 1/2,39.86
 2026-10-05,MACK VII,180.00
@@ -34,7 +38,7 @@ export const SEED_CSV_NOV_2026 = `date,title,amount
 `;
 
 /** Open invoice Dez/2026 (cycle 02/11 – 01/12): 23 purchases totalling R$ 1.154,97 + one payment. */
-export const SEED_CSV_DEC_2026 = `date,title,amount
+export const SAMPLE_CSV_DEC_2026 = `date,title,amount
 2026-11-03,Totalpass,99.90
 2026-11-03,Ifd*Burger King,38.90
 2026-11-04,Pix no Crédito - Carloslimadesouza - Parcela 1/2,375.00
@@ -71,7 +75,7 @@ type CategoryKey =
   | "transfers"
   | "other";
 
-const CATEGORY_SEED: Record<CategoryKey, Omit<Category, "id">> = {
+const SAMPLE_CATEGORIES: Record<CategoryKey, Omit<Category, "id">> = {
   food: { name: "Alimentação", color: "#F97316", icon: "utensils", monthly_limit: 900 },
   transport: { name: "Transporte", color: "#0EA5E9", icon: "car", monthly_limit: 160 },
   health: { name: "Saúde", color: "#10B981", icon: "heart-pulse", monthly_limit: 300 },
@@ -82,7 +86,7 @@ const CATEGORY_SEED: Record<CategoryKey, Omit<Category, "id">> = {
   other: { name: "Outros", color: "#64748B", icon: "shapes", monthly_limit: 100 },
 };
 
-const RULE_SEED: readonly [pattern: string, category: CategoryKey, cleanName: string | null][] = [
+const SAMPLE_RULES: readonly [pattern: string, category: CategoryKey, cleanName: string | null][] = [
   ["carloslimadesouza", "transfers", null],
   ["edinelma", "transfers", null],
   ["mack vii", "transport", "Posto Mack VII"],
@@ -104,32 +108,32 @@ const RULE_SEED: readonly [pattern: string, category: CategoryKey, cleanName: st
   ["lavanderia", "other", null],
 ];
 
-const SUBSCRIPTION_SEED: readonly [title: string, amount: number, category: CategoryKey, day: number][] = [
+const SAMPLE_SUBSCRIPTIONS: readonly [title: string, amount: number, category: CategoryKey, day: number][] = [
   ["Totalpass", 99.9, "subscriptions", 3],
   ["Google One", 9.99, "subscriptions", 9],
   ["YouTube Music", 26.9, "subscriptions", 12],
   ["Tim Controle", 59.0, "subscriptions", 15],
 ];
 
-export async function buildSeedState(): Promise<FinanceState> {
+export async function buildSampleState(): Promise<FinanceState> {
   const categoryIds = Object.fromEntries(
-    (Object.keys(CATEGORY_SEED) as CategoryKey[]).map((key) => [key, newId()]),
+    (Object.keys(SAMPLE_CATEGORIES) as CategoryKey[]).map((key) => [key, newId()]),
   ) as Record<CategoryKey, string>;
 
-  const categories: Category[] = (Object.keys(CATEGORY_SEED) as CategoryKey[]).map((key) => ({
+  const categories: Category[] = (Object.keys(SAMPLE_CATEGORIES) as CategoryKey[]).map((key) => ({
     id: categoryIds[key],
-    ...CATEGORY_SEED[key],
+    ...SAMPLE_CATEGORIES[key],
   }));
 
-  const rules: CategorizationRule[] = RULE_SEED.map(([pattern, category, cleanName], index) => ({
+  const rules: CategorizationRule[] = SAMPLE_RULES.map(([pattern, category, cleanName], index) => ({
     id: newId(),
     pattern,
     clean_name_override: cleanName,
     category_id: categoryIds[category],
-    priority: RULE_SEED.length - index,
+    priority: SAMPLE_RULES.length - index,
   }));
 
-  const subscriptions: RecurringSubscription[] = SUBSCRIPTION_SEED.map(([title, amount, category, day]) => ({
+  const subscriptions: RecurringSubscription[] = SAMPLE_SUBSCRIPTIONS.map(([title, amount, category, day]) => ({
     id: newId(),
     title,
     expected_amount: amount,
@@ -149,8 +153,8 @@ export async function buildSeedState(): Promise<FinanceState> {
   };
 
   const imports = [
-    { csv: SEED_CSV_NOV_2026, filename: "Nubank_2026-11-09.csv", month: "2026-11", at: "2026-11-02T09:15:00.000Z" },
-    { csv: SEED_CSV_DEC_2026, filename: "Nubank_2026-12-09.csv", month: "2026-12", at: "2026-11-16T21:40:00.000Z" },
+    { csv: SAMPLE_CSV_NOV_2026, filename: "Nubank_2026-11-09.csv", month: "2026-11", at: "2026-11-02T09:15:00.000Z" },
+    { csv: SAMPLE_CSV_DEC_2026, filename: "Nubank_2026-12-09.csv", month: "2026-12", at: "2026-11-16T21:40:00.000Z" },
   ];
   for (const item of imports) {
     const parsed = await parseNubankCsv(item.csv);
@@ -184,16 +188,4 @@ export async function buildSeedState(): Promise<FinanceState> {
   };
 
   return { ...state, transactions: [...state.transactions, salary] };
-}
-
-export function emptyState(): FinanceState {
-  return {
-    settings: { display_name: "Minha Carteira", closing_day: 2, monthly_income: 0, dismissed_alerts: [] },
-    categories: [],
-    transactions: [],
-    import_batches: [],
-    deleted_csv_hashes: [],
-    recurring_subscriptions: [],
-    categorization_rules: [],
-  };
 }

@@ -20,7 +20,7 @@ function initials(name: string): string {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { state, currentMonth, storageKind } = useFinance();
+  const { state, currentMonth, userEmail } = useFinance();
   const { openSearch } = useDialogs();
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -79,9 +79,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">{state.settings.display_name}</p>
-            <p className="truncate text-[11px] text-muted-foreground">
-              Controle Pessoal • {storageKind === "supabase" ? "Nuvem" : "Local"}
-            </p>
+            <p className="truncate text-[11px] text-muted-foreground">{userEmail ?? "Controle Pessoal"}</p>
           </div>
           <Button
             variant="ghost"

@@ -2,10 +2,7 @@
 -- ArrumaBolso — Supabase / PostgreSQL schema
 --
 -- Every table is isolated per user through Row Level Security on auth.uid().
--- Seed data: the app seeds a brand-new account on first login using the same
--- import engine as a real CSV upload (src/lib/data/seed.ts), so the seeded
--- unique_hash values are byte-for-byte identical to a re-import of the Nubank
--- CSV. That keeps a single source of truth for the hash algorithm.
+-- New accounts start empty: the user feeds the system with their own data.
 -- ============================================================================
 
 create extension if not exists pgcrypto;

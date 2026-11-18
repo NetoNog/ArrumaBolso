@@ -1,6 +1,6 @@
 "use client";
 
-import { Cloud, Download, HardDrive, LogIn, LogOut, Palette, RotateCcw, Upload } from "lucide-react";
+import { Cloud, Download, LogOut, Palette, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
@@ -18,19 +18,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { emptyState } from "@/lib/data/seed";
+import { emptyState } from "@/lib/data/initial-state";
 import { parseFinanceState } from "@/lib/data/repository";
 import { updateSettings } from "@/lib/domain/operations";
-import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useFinance } from "@/lib/store/finance-store";
 
-type Confirm = "seed" | "empty" | null;
-
 export function SettingsView() {
-  const { state, commit, replaceState, resetToSeed, storageKind, userEmail } = useFinance();
+  const { state, commit, replaceState, userEmail } = useFinance();
   const [name, setName] = useState(state.settings.display_name);
   const [closingDay, setClosingDay] = useState(String(state.settings.closing_day));
-  const [confirm, setConfirm] = useState<Confirm>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function saveProfile() {
@@ -76,7 +74,7 @@ export function SettingsView() {
       toast.error("Falha ao sair", { description: error.message });
       return;
     }
-    window.location.assign(new URL("/", window.location.origin));
+    window.location.assign(new URL("/login", window.location.origin));
   }
 
   return (
@@ -102,27 +100,15 @@ export function SettingsView() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            {storageKind === "supabase" ? <Cloud className="size-4 text-blue-600" /> : <HardDrive className="size-4 text-muted-foreground" />}
-            Armazenamento: {storageKind === "supabase" ? "Supabase (nuvem)" : "Local (este navegador)"}
+            <Cloud className="size-4 text-blue-600" />
+            Conta
           </CardTitle>
-          <CardDescription>
-            {storageKind === "supabase"
-              ? `Conectado como ${userEmail ?? "usuário"}. Dados isolados por RLS.`
-              : isSupabaseConfigured()
-                ? "Supabase configurado. Entre para sincronizar seus dados na nuvem."
-                : "Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY para habilitar a nuvem."}
-          </CardDescription>
+          <CardDescription>Conectado como {userEmail ?? "usuário"}. Seus dados ficam isolados por Row Level Security.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          {storageKind === "supabase" ? (
-            <Button variant="outline" onClick={signOut}>
-              <LogOut /> Sair
-            </Button>
-          ) : isSupabaseConfigured() ? (
-            <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
-              <Cloud /> Entrar / criar conta
-            </Button>
-          ) : null}
+          <Button variant="outline" onClick={signOut}>
+            <LogOut /> Sair
+          </Button>
         </CardContent>
       </Card>
 
@@ -134,9 +120,6 @@ export function SettingsView() {
         <CardContent className="flex flex-wrap gap-2">
           <Button variant="outline" nativeButton={false} render={<Link href="/marca" />}>
             <Palette /> Identidade visual
-          </Button>
-          <Button variant="outline" nativeButton={false} render={<Link href="/login" />}>
-            <LogIn /> Tela de login
           </Button>
         </CardContent>
       </Card>
@@ -154,19 +137,16 @@ export function SettingsView() {
             <Upload /> Restaurar backup
           </Button>
           <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" onChange={importBackup} />
-          <Button variant="outline" onClick={() => setConfirm("seed")}>
-            <RotateCcw /> Recarregar dados de exemplo
-          </Button>
-          <Button variant="destructive" onClick={() => setConfirm("empty")}>
+          <Button variant="destructive" onClick={() => setConfirmReset(true)}>
             Começar do zero
           </Button>
         </CardContent>
       </Card>
 
-      <AlertDialog open={confirm !== null} onOpenChange={(open) => !open && setConfirm(null)}>
+      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{confirm === "seed" ? "Recarregar dados de exemplo?" : "Apagar todos os dados?"}</AlertDialogTitle>
+            <AlertDialogTitle>Apagar todos os dados?</AlertDialogTitle>
             <AlertDialogDescription>
               Todos os lançamentos, categorias, regras e histórico atuais serão substituídos. Exporte um backup antes se quiser guardar.
             </AlertDialogDescription>
@@ -175,11 +155,10 @@ export function SettingsView() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <Button
               variant="destructive"
-              onClick={async () => {
-                if (confirm === "seed") await resetToSeed();
-                else replaceState({ ...emptyState(), settings: { ...state.settings, dismissed_alerts: [] } });
-                toast.success(confirm === "seed" ? "Dados de exemplo carregados" : "Dados apagados");
-                setConfirm(null);
+              onClick={() => {
+                replaceState({ ...emptyState(), settings: { ...state.settings, dismissed_alerts: [] } });
+                toast.success("Dados apagados");
+                setConfirmReset(false);
               }}
             >
               Confirmar

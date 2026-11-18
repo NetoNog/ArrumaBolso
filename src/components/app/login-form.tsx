@@ -1,31 +1,32 @@
 "use client";
 
-import { ArrowRight, Eye, EyeOff, Info, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useState, type FormEvent, type ReactNode } from "react";
-import { cn } from "cn";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState, type FormEvent } from "react";
 
 import { BrandLogo } from "@/components/brand/logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Mode = "sign_in" | "sign_up";
 
-const COPY: Record<Mode, { title: string; subtitle: string; submit: string; switchLabel: string }> = {
+const COPY: Record<Mode, { title: string; subtitle: string; submit: string; switchPrompt: string; switchAction: string }> = {
   sign_in: {
-    title: "Entrar",
-    subtitle: "Sua fatura, parcelas e projeção dos próximos 12 meses.",
+    title: "Entrar na sua conta",
+    subtitle: "Informe seu e-mail e senha para continuar.",
     submit: "Entrar",
-    switchLabel: "Ainda não tem conta? Criar conta",
+    switchPrompt: "Ainda não tem conta?",
+    switchAction: "Criar conta",
   },
   sign_up: {
     title: "Criar conta",
-    subtitle: "Sincronize seus lançamentos na nuvem, isolados por usuário.",
+    subtitle: "Sua conta começa vazia: cadastre seus próprios lançamentos e faturas.",
     submit: "Criar conta",
-    switchLabel: "Já tem conta? Entrar",
+    switchPrompt: "Já tem conta?",
+    switchAction: "Entrar",
   },
 };
-
-const EASE = "cubic-bezier(0.22,1,0.36,1)";
 
 export function LoginForm() {
   const client = getSupabaseBrowserClient();
@@ -58,160 +59,95 @@ export function LoginForm() {
     if (mode === "sign_up" && !data.session) {
       return setMessage({ tone: "info", text: "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre." });
     }
-    // Full reload so the data layer boots against the Supabase repository.
+    // Full reload so the data layer boots against the signed-in session.
     window.location.assign(new URL("/", window.location.origin));
   }
 
-  return (
-    <div
-      className="relative z-10 w-full max-w-90 motion-safe:animate-[ab-fade-up_700ms_150ms_both]"
-      style={{ animationTimingFunction: EASE }}
-    >
-      <Link href="/" aria-label="ArrumaBolso" className="inline-block rounded-md">
-        <BrandLogo height={30} />
-      </Link>
+  function switchMode() {
+    setMode(mode === "sign_in" ? "sign_up" : "sign_in");
+    setMessage(null);
+  }
 
-      <h1 className="mt-10 text-[28px] leading-tight font-semibold tracking-tight text-white">{copy.title}</h1>
-      <p className="mt-1.5 text-sm text-zinc-400">{copy.subtitle}</p>
+  return (
+    <div className="w-full max-w-sm">
+      <BrandLogo height={26} className="mb-10 lg:hidden" />
+
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">{copy.title}</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">{copy.subtitle}</p>
 
       {!client ? (
-        <p className="mt-6 flex gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs leading-relaxed text-zinc-300">
-          <Info className="mt-0.5 size-4 shrink-0 text-[#60A5FA]" />
+        <p role="alert" className="mt-6 flex gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs leading-relaxed text-foreground">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
-            Login em nuvem não configurado (defina as variáveis do Supabase no <code className="num">.env.local</code>). Use o modo local
-            abaixo: tudo funciona e fica salvo neste navegador.
+            Autenticação indisponível: defina <code className="num">NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
+            <code className="num">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> no ambiente.
           </span>
         </p>
       ) : null}
 
-      <form onSubmit={submit} className="mt-8 grid gap-7" noValidate>
-        <UnderlineField
-          id="email"
-          label="E-mail"
-          type="email"
-          autoComplete="email"
-          disabled={!client}
-          value={email}
-          onChange={setEmail}
-        />
-        <UnderlineField
-          id="password"
-          label="Senha"
-          type={showPassword ? "text" : "password"}
-          autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
-          disabled={!client}
-          value={password}
-          onChange={setPassword}
-          trailing={
+      <form onSubmit={submit} className="mt-8 grid gap-5" noValidate>
+        <div className="grid gap-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="voce@exemplo.com"
+            className="h-10"
+            disabled={!client}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="password">Senha</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
+              placeholder={mode === "sign_up" ? "Mínimo de 8 caracteres" : undefined}
+              className="h-10 pr-10"
+              disabled={!client}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
             <button
               type="button"
               aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               onClick={() => setShowPassword((value) => !value)}
               disabled={!client}
-              className="rounded p-1 text-zinc-400 transition-colors hover:text-white disabled:opacity-40"
+              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
-          }
-        />
+          </div>
+        </div>
 
         {message ? (
-          <p role={message.tone === "error" ? "alert" : "status"} className={message.tone === "error" ? "-mt-3 text-xs text-rose-400" : "-mt-3 text-xs text-zinc-300"}>
+          <p
+            role={message.tone === "error" ? "alert" : "status"}
+            className={message.tone === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}
+          >
             {message.text}
           </p>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={loading || !client}
-          className="group flex h-11 items-center justify-center gap-2 rounded-md bg-[#2563EB] text-sm font-medium text-white transition-[background-color,transform] hover:bg-[#1D4ED8] focus-visible:ring-3 focus-visible:ring-[#60A5FA]/60 focus-visible:outline-none active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+        <Button type="submit" size="lg" className="h-10" disabled={loading || !client}>
+          {loading ? <Loader2 className="animate-spin" /> : null}
           {loading ? "Aguarde..." : copy.submit}
-          {!loading ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
-        </button>
+        </Button>
       </form>
 
       {client ? (
-        <button
-          type="button"
-          className="mt-4 text-xs text-zinc-400 transition-colors hover:text-white"
-          onClick={() => {
-            setMode(mode === "sign_in" ? "sign_up" : "sign_in");
-            setMessage(null);
-          }}
-        >
-          {copy.switchLabel}
-        </button>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          {copy.switchPrompt}{" "}
+          <button type="button" onClick={switchMode} className="font-medium text-foreground underline-offset-4 hover:underline">
+            {copy.switchAction}
+          </button>
+        </p>
       ) : null}
-
-      <div className="my-7 flex items-center gap-3 text-[11px] font-medium tracking-wider text-zinc-500 uppercase">
-        <span className="h-px flex-1 bg-white/10" />
-        ou
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
-
-      <Link
-        href="/"
-        className="flex h-11 items-center justify-center rounded-md border border-white/15 text-sm font-medium text-zinc-100 transition-colors hover:border-white/30 hover:bg-white/[0.04] focus-visible:ring-3 focus-visible:ring-[#60A5FA]/60 focus-visible:outline-none"
-      >
-        Continuar no modo local
-      </Link>
-      <p className="mt-2 text-center text-[11px] text-zinc-500">Sem conta: os dados ficam apenas neste navegador.</p>
-    </div>
-  );
-}
-
-/** Underlined input with a floating label and a focus line that grows from the centre. */
-function UnderlineField({
-  id,
-  label,
-  type,
-  autoComplete,
-  disabled,
-  value,
-  onChange,
-  trailing,
-}: {
-  id: string;
-  label: string;
-  type: string;
-  autoComplete: string;
-  disabled: boolean;
-  value: string;
-  onChange: (value: string) => void;
-  trailing?: ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <input
-        id={id}
-        type={type}
-        autoComplete={autoComplete}
-        disabled={disabled}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder=" "
-        className={cn(
-          "peer block h-12 w-full border-0 border-b border-zinc-600 bg-transparent px-0 pt-4 pb-1.5 text-[15px] text-white outline-none",
-          "transition-colors hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-50",
-          "[&:-webkit-autofill]:[-webkit-text-fill-color:#fff] [&:-webkit-autofill]:[transition:background-color_9999s]",
-          trailing && "pr-9",
-        )}
-      />
-      <label
-        htmlFor={id}
-        className={cn(
-          "pointer-events-none absolute top-1/2 left-0 origin-left -translate-y-1/2 text-[15px] text-zinc-400 transition-all duration-200",
-          "peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-[#93C5FD]",
-          "peer-[:not(:placeholder-shown)]:top-1 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs",
-          "peer-disabled:opacity-50",
-        )}
-      >
-        {label}
-      </label>
-      <span className="pointer-events-none absolute right-0 bottom-0 left-0 h-0.5 origin-center scale-x-0 bg-[#3B82F6] transition-transform duration-300 peer-focus:scale-x-100" />
-      {trailing ? <span className="absolute right-0 bottom-1.5">{trailing}</span> : null}
     </div>
   );
 }

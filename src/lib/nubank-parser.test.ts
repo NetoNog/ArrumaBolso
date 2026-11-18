@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSeedState, SEED_CSV_DEC_2026 } from "@/lib/data/seed";
+import { buildSampleState, SAMPLE_CSV_DEC_2026 } from "@/lib/testing/sample-state";
 import { deleteTransactions, updateTransaction } from "@/lib/domain/operations";
 import type { FinanceState } from "@/lib/domain/types";
 import { committedFor, invoiceTotal, expensesOfMonth } from "@/lib/finance/metrics";
@@ -37,9 +37,9 @@ describe("parseNubankCsv", () => {
   });
 });
 
-describe("seed", () => {
+describe("sample state", () => {
   it("matches the reference December invoice", async () => {
-    const state = await buildSeedState();
+    const state = await buildSampleState();
     expect(expensesOfMonth(state, "2026-12")).toHaveLength(23);
     expect(invoiceTotal(state, "2026-12")).toBe(1154.97);
     expect(invoiceTotal(state, "2026-11")).toBe(1012.67);
@@ -48,7 +48,7 @@ describe("seed", () => {
   });
 
   it("replaced the Economiafarma 2/2 projection with the real CSV row", async () => {
-    const state = await buildSeedState();
+    const state = await buildSampleState();
     const parcels = state.transactions.filter((tx) => tx.raw_title.startsWith("Economiafarma"));
     expect(parcels).toHaveLength(2);
     expect(parcels.every((tx) => tx.source === "csv")).toBe(true);
@@ -57,27 +57,27 @@ describe("seed", () => {
 
 describe("reconciliation matrix", () => {
   it("scenario C: re-importing the same file creates nothing", async () => {
-    const state = await buildSeedState();
-    const { report, state: next } = await importCsv(state, SEED_CSV_DEC_2026);
+    const state = await buildSampleState();
+    const { report, state: next } = await importCsv(state, SAMPLE_CSV_DEC_2026);
     expect(report.summary.newCount).toBe(0);
     expect(report.summary.existingCount).toBe(24);
     expect(next.transactions).toHaveLength(state.transactions.length);
   });
 
   it("scenario A: only genuinely new rows are inserted from a later export", async () => {
-    const state = await buildSeedState();
-    const later = `${SEED_CSV_DEC_2026}2026-11-20,Ifd*Nova Loja,42.10\n`;
+    const state = await buildSampleState();
+    const later = `${SAMPLE_CSV_DEC_2026}2026-11-20,Ifd*Nova Loja,42.10\n`;
     const { report, state: next } = await importCsv(state, later);
     expect(report.summary.newCount).toBe(1);
     expect(invoiceTotal(next, "2026-12")).toBe(1197.07);
   });
 
   it("scenario B: user edits are never overwritten", async () => {
-    const seed = await buildSeedState();
+    const seed = await buildSampleState();
     const target = seed.transactions.find((tx) => tx.raw_title === "MACK VII" && tx.invoice_month === "2026-12");
     if (!target) throw new Error("seed row missing");
     const edited = updateTransaction(seed, target.id, { clean_title: "Gasolina carro", amount: 100 });
-    const { report, state: next } = await importCsv(edited, SEED_CSV_DEC_2026);
+    const { report, state: next } = await importCsv(edited, SAMPLE_CSV_DEC_2026);
     expect(report.summary.protectedCount).toBe(1);
     const after = next.transactions.find((tx) => tx.id === target.id);
     expect(after?.clean_title).toBe("Gasolina carro");
@@ -86,16 +86,16 @@ describe("reconciliation matrix", () => {
   });
 
   it("scenario D: deleted CSV rows do not resurrect, unless restored", async () => {
-    const seed = await buildSeedState();
+    const seed = await buildSampleState();
     const duplicate = seed.transactions.filter((tx) => tx.raw_title === "64900927edinelma")[1];
     const afterDelete = deleteTransactions(seed, [duplicate.id]);
     expect(afterDelete.deleted_csv_hashes).toHaveLength(1);
 
-    const { report, state: next } = await importCsv(afterDelete, SEED_CSV_DEC_2026);
+    const { report, state: next } = await importCsv(afterDelete, SAMPLE_CSV_DEC_2026);
     expect(report.summary.deletedCount).toBe(1);
     expect(next.transactions.filter((tx) => tx.raw_title === "64900927edinelma")).toHaveLength(1);
 
-    const restoreReport = reconcile(await parseNubankCsv(SEED_CSV_DEC_2026), afterDelete, {
+    const restoreReport = reconcile(await parseNubankCsv(SAMPLE_CSV_DEC_2026), afterDelete, {
       filename: "x.csv",
       invoiceMonth: "2026-12",
     });
@@ -108,14 +108,14 @@ describe("reconciliation matrix", () => {
   });
 
   it("scenario E: manual transactions are untouched by imports", async () => {
-    const seed = await buildSeedState();
+    const seed = await buildSampleState();
     const manual = seed.transactions.filter((tx) => tx.source === "manual");
-    const { state: next } = await importCsv(seed, SEED_CSV_DEC_2026);
+    const { state: next } = await importCsv(seed, SAMPLE_CSV_DEC_2026);
     expect(next.transactions.filter((tx) => tx.source === "manual")).toEqual(manual);
   });
 
   it("projects future parcels and swaps the projection for the real row next month", async () => {
-    const seed = await buildSeedState();
+    const seed = await buildSampleState();
     const projected = seed.transactions.find((tx) => tx.source === "projected");
     expect(projected?.invoice_month).toBe("2027-01");
     expect(projected?.raw_title).toBe("Pix no Crédito - Carloslimadesouza - Parcela 2/2");
@@ -132,7 +132,7 @@ describe("reconciliation matrix", () => {
   });
 
   it("undo removes only unedited rows of the batch", async () => {
-    const seed = await buildSeedState();
+    const seed = await buildSampleState();
     const csv = "date,title,amount\n2026-11-20,Loja A,10.00\n2026-11-20,Loja B,20.00\n";
     const { state: next, batch } = await importCsv(seed, csv);
     const lojaB = next.transactions.find((tx) => tx.raw_title === "Loja B");

@@ -9,8 +9,7 @@ pnpm install
 pnpm dev          # http://localhost:3000
 ```
 
-No primeiro acesso, o app cria dados de exemplo (fatura Dez/2026 com 23 compras = R$ 1.154,97). Os dados ficam no `localStorage`.
-Para testar a reimportação protegida, use `public/samples/Nubank_2026-12-09.csv` (mesma fatura com 2 linhas novas).
+O app exige login: sem sessão, qualquer rota redireciona para `/login`. Toda conta nova começa vazia — o usuário cadastra categorias, lançamentos e importa as próprias faturas.
 
 ## Verificação
 
@@ -18,11 +17,11 @@ Para testar a reimportação protegida, use `public/samples/Nubank_2026-12-09.cs
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 ```
 
-## Supabase (opcional)
+## Supabase (obrigatório)
 
 1. Execute `supabase/schema.sql` no SQL Editor (tabelas, índices, RLS por `auth.uid()`).
 2. Copie `.env.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-3. Entre em `/login`. Uma conta nova recebe os dados de exemplo gerados pelo mesmo motor de importação, então os `unique_hash` são idênticos aos de uma reimportação real.
+3. Crie uma conta em `/login`.
 
 ## Arquitetura
 
@@ -32,7 +31,8 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 | Operações de CRUD (funções puras) | `src/lib/domain/operations.ts` |
 | Motor de importação/conciliação do CSV | `src/lib/nubank-parser.ts` |
 | Métricas, alertas e projeção | `src/lib/finance/metrics.ts` |
-| Repositórios (localStorage / Supabase) | `src/lib/data/repository.ts` |
+| Repositório (Supabase) | `src/lib/data/repository.ts` |
+| Proteção de rotas (redirect para `/login`) | `src/proxy.ts` |
 | Store React | `src/lib/store/finance-store.tsx` |
 | Telas | `src/components/views/*`, rotas em `src/app/(app)/*` |
 

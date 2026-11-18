@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { emptyState } from "@/lib/data/seed";
+import { emptyState } from "@/lib/data/initial-state";
 import {
   createTransaction,
   deleteCategory,

@@ -209,13 +209,6 @@ export function ImportWizard({ onFinished, compact = false }: { onFinished?: () 
               />
             </div>
             <div className="flex items-center gap-2">
-              <a
-                href="/samples/Nubank_2026-12-09.csv"
-                download
-                className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Baixar CSV de exemplo
-              </a>
               <Button onClick={analyze} disabled={!file || loading || !/^\d{4}-\d{2}$/.test(invoiceMonth)}>
                 {loading ? "Analisando..." : "Analisar conciliação"}
               </Button>
