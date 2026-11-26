@@ -12,6 +12,10 @@
  * below can retune them.
  */
 @theme {
+  /* Motion curves: strong ease-out for entering/leaving UI, ease-in-out for on-screen movement. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
   --text-xs: 0.7292rem; /* 11.67px, step -1: supporting text */
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem; /* 14px, step 0: body */
@@ -33,28 +37,28 @@
 }
 
 /*
- * Astryx "Mobile Type" adaptation: on touch screens below lg the body floors
- * at 16px and the ratio drops to 1.1736, so text is easier to read on a phone
- * while the largest display size keeps its desktop size.
+ * Mobile typography tuning: keep touch body readable (~14–15.5px) without
+ * inflating utility sizes so 2-column KPIs, currency amounts, pills, and card
+ * headers never wrap awkwardly or clip with ellipsis on 360px–414px screens.
  */
 @media (pointer: coarse) and (max-width: 63.99rem) {
   :root {
-    --text-xs: 0.8521rem; /* 13.63px */
-    --text-xs--line-height: 1.25rem;
-    --text-sm: 1rem; /* 16px */
-    --text-sm--line-height: 1.5rem;
-    --text-base: 1.1736rem; /* 18.78px */
-    --text-base--line-height: 1.75rem;
-    --text-lg: 1.2714rem; /* 20.34px */
-    --text-lg--line-height: 1.75rem;
-    --text-xl: 1.3773rem; /* 22.04px */
-    --text-xl--line-height: 2rem;
-    --text-2xl: 1.6164rem; /* 25.86px */
-    --text-2xl--line-height: 2.25rem;
-    --text-3xl: 1.8971rem; /* 30.35px */
-    --text-3xl--line-height: 2.75rem;
-    --text-4xl: 2.2264rem; /* 35.62px */
-    --text-4xl--line-height: 2.75rem;
+    --text-xs: 0.75rem; /* 12px */
+    --text-xs--line-height: 1.05rem;
+    --text-sm: 0.875rem; /* 14px */
+    --text-sm--line-height: 1.3rem;
+    --text-base: 0.975rem; /* 15.6px */
+    --text-base--line-height: 1.45rem;
+    --text-lg: 1.075rem; /* 17.2px */
+    --text-lg--line-height: 1.55rem;
+    --text-xl: 1.2rem; /* 19.2px */
+    --text-xl--line-height: 1.7rem;
+    --text-2xl: 1.375rem; /* 22px */
+    --text-2xl--line-height: 1.85rem;
+    --text-3xl: 1.65rem; /* 26.4px */
+    --text-3xl--line-height: 2.15rem;
+    --text-4xl: 2rem; /* 32px */
+    --text-4xl--line-height: 2.45rem;
   }
 }
 
@@ -99,6 +103,15 @@
   --color-brand-soft: var(--brand-soft);
   --color-ink: var(--ink);
   --color-nav-active-foreground: var(--nav-active-foreground);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-surface-subtle: var(--surface-subtle);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -106,91 +119,205 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
 }
 
-/* Pulse-inspired palette: slate canvas, white surfaces, blue-600 accent. */
+/* Fintech light palette: cool soft-white canvas, pure white elevated cards, royal blue accent. */
 :root {
-  --background: #f8fafc;
+  color-scheme: light;
+  --background: #f6f8fc;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
+  --surface-subtle: #f8fafd;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #2563eb;
+  --primary: #2f5ee6;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted: #eef3f9;
+  --muted-foreground: #475569;
   --accent: #f1f5f9;
   --accent-foreground: #0f172a;
-  --destructive: #e11d48;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
+  --destructive: #be123c;
+  --border: #e5ebf4;
+  --input: #dde5f0;
   --ring: #93c5fd;
-  --chart-1: #2563eb;
-  --chart-2: #8b5cf6;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #e11d48;
-  --radius: 0.625rem;
+  --chart-1: #2f5ee6;
+  --chart-2: #7c3aed;
+  --chart-3: #047857;
+  --chart-4: #b45309;
+  --chart-5: #be123c;
+  --radius: 0.75rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #334155;
-  --sidebar-primary: #2563eb;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #2f5ee6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
+  --sidebar-accent: #f1f5fb;
   --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
+  --sidebar-border: #e5ebf4;
   --sidebar-ring: #93c5fd;
-  --nav-active: #18181b;
-  --nav-active-foreground: #ffffff;
-  /* ArrumaBolso brand */
-  --brand: #2563eb;
-  --brand-soft: #eff6ff;
+  /* Brand & Active Nav (unified pill instead of harsh black/white) */
+  --brand: #2f5ee6;
+  --brand-soft: #eef4ff;
+  --nav-active: var(--brand-soft);
+  --nav-active-foreground: var(--brand);
+  /* Hero card gradient tokens (accent-aware, WCAG AA contrast with white text) */
+  --hero-from: #3b63e0;
+  --hero-mid: #2c52cc;
+  --hero-to: #1e3fa8;
+  --hero-shadow: rgba(47, 94, 230, 0.42);
+  /* Semantic financial tokens (calibrated for WCAG AA >= 4.5:1 on white & soft tints) */
+  --positive: #047857;
+  --positive-soft: #ecfdf5;
+  --negative: #be123c;
+  --negative-soft: #fff1f2;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --info: #2f5ee6;
+  --info-soft: #eef4ff;
   /* "Noite": brand background (BRAND.md), same in both themes. */
   --night: #0b1b4d;
   --ink: #0f172a;
 }
 
+/* Deep Fintech Navy dark palette: layered slate-navy surfaces with crisp subtle hairline borders. */
 .dark {
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --card: #111113;
-  --card-foreground: #f4f4f5;
-  --popover: #18181b;
-  --popover-foreground: #f4f4f5;
-  --primary: #3b82f6;
+  color-scheme: dark;
+  --background: #0a0f1d;
+  --foreground: #f1f5f9;
+  --card: #11182b;
+  --card-foreground: #f1f5f9;
+  --surface-subtle: #162036;
+  --popover: #141d33;
+  --popover-foreground: #f1f5f9;
+  --primary: #3563eb;
   --primary-foreground: #ffffff;
-  --secondary: #1c1c20;
-  --secondary-foreground: #f4f4f5;
-  --muted: #1c1c20;
-  --muted-foreground: #a1a1aa;
-  --accent: #1c1c20;
-  --accent-foreground: #f4f4f5;
+  --secondary: #182238;
+  --secondary-foreground: #f1f5f9;
+  --muted: #182238;
+  --muted-foreground: #94a3b8;
+  --accent: #1c2842;
+  --accent-foreground: #f1f5f9;
   --destructive: #fb7185;
-  --border: #27272a;
-  --input: #2e2e33;
-  --ring: #1d4ed8;
-  --chart-1: #3b82f6;
+  --border: #22304a;
+  --input: #2a3a57;
+  --ring: #3b82f6;
+  --chart-1: #5b8bff;
   --chart-2: #a78bfa;
   --chart-3: #34d399;
   --chart-4: #fbbf24;
   --chart-5: #fb7185;
-  --sidebar: #0c0c0e;
-  --sidebar-foreground: #d4d4d8;
-  --sidebar-primary: #3b82f6;
+  --sidebar: #0d1424;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-primary: #3563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1c1c20;
-  --sidebar-accent-foreground: #f4f4f5;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #1d4ed8;
-  --nav-active: #f4f4f5;
-  --nav-active-foreground: #09090b;
-  --brand: #60a5fa;
-  --brand-soft: rgba(59, 130, 246, 0.12);
+  --sidebar-accent: #182238;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e2a42;
+  --sidebar-ring: #3b82f6;
+  --brand: #7aa2ff;
+  --brand-soft: rgba(91, 139, 255, 0.14);
+  --nav-active: var(--brand-soft);
+  --nav-active-foreground: var(--brand);
+  --hero-from: #3b63e0;
+  --hero-mid: #2b50c7;
+  --hero-to: #1e3b9e;
+  --hero-shadow: rgba(37, 99, 235, 0.32);
+  --positive: #34d399;
+  --positive-soft: rgba(16, 185, 129, 0.14);
+  --negative: #fb7185;
+  --negative-soft: rgba(244, 63, 94, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --info: #7aa2ff;
+  --info-soft: rgba(91, 139, 255, 0.14);
   --night: #0b1b4d;
-  --ink: #f4f4f5;
+  --ink: #f1f5f9;
+  --shadow-panel: 0 1px 2px rgba(2, 6, 23, 0.45), 0 10px 28px -14px rgba(2, 6, 23, 0.65);
+}
+
+/* Accent Color Presets (Settings → Aparência) */
+:root[data-accent="emerald"] {
+  --primary: #047857;
+  --brand: #047857;
+  --brand-soft: #ecfdf5;
+  --sidebar-primary: #047857;
+  --ring: #6ee7b7;
+  --sidebar-ring: #6ee7b7;
+  --chart-1: #047857;
+  --hero-from: #059669;
+  --hero-mid: #047857;
+  --hero-to: #065f46;
+  --hero-shadow: rgba(4, 120, 87, 0.38);
+}
+.dark[data-accent="emerald"] {
+  --primary: #047857;
+  --brand: #34d399;
+  --brand-soft: rgba(16, 185, 129, 0.15);
+  --sidebar-primary: #047857;
+  --ring: #059669;
+  --sidebar-ring: #059669;
+  --chart-1: #34d399;
+  --hero-from: #059669;
+  --hero-mid: #047857;
+  --hero-to: #065f46;
+  --hero-shadow: rgba(5, 150, 105, 0.3);
+}
+
+:root[data-accent="violet"] {
+  --primary: #6d28d9;
+  --brand: #6d28d9;
+  --brand-soft: #f5f3ff;
+  --sidebar-primary: #6d28d9;
+  --ring: #c4b5fd;
+  --sidebar-ring: #c4b5fd;
+  --chart-1: #6d28d9;
+  --hero-from: #7c3aed;
+  --hero-mid: #6d28d9;
+  --hero-to: #5b21b6;
+  --hero-shadow: rgba(109, 40, 217, 0.38);
+}
+.dark[data-accent="violet"] {
+  --primary: #6d28d9;
+  --brand: #a78bfa;
+  --brand-soft: rgba(139, 92, 246, 0.16);
+  --sidebar-primary: #6d28d9;
+  --ring: #7c3aed;
+  --sidebar-ring: #7c3aed;
+  --chart-1: #a78bfa;
+  --hero-from: #7c3aed;
+  --hero-mid: #6d28d9;
+  --hero-to: #4c1d95;
+  --hero-shadow: rgba(124, 58, 237, 0.32);
+}
+
+:root[data-accent="slate"] {
+  --primary: #1e293b;
+  --brand: #1e293b;
+  --brand-soft: #eef2f6;
+  --sidebar-primary: #1e293b;
+  --ring: #94a3b8;
+  --sidebar-ring: #94a3b8;
+  --chart-1: #334155;
+  --hero-from: #334155;
+  --hero-mid: #1e293b;
+  --hero-to: #0f172a;
+  --hero-shadow: rgba(15, 23, 42, 0.38);
+}
+.dark[data-accent="slate"] {
+  --primary: #475569;
+  --brand: #cbd5e1;
+  --brand-soft: rgba(148, 163, 184, 0.16);
+  --sidebar-primary: #64748b;
+  --ring: #64748b;
+  --sidebar-ring: #64748b;
+  --chart-1: #94a3b8;
+  --hero-from: #334155;
+  --hero-mid: #1e293b;
+  --hero-to: #0f172a;
+  --hero-shadow: rgba(2, 6, 23, 0.55);
 }
 
 @layer base {
@@ -249,9 +376,224 @@
   }
 }
 
-/* Space reserved below the content for the mobile bottom navigation. */
+/* App content appearing once the user's data has loaded (opacity only: nothing jumps). */
+@keyframes ab-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Smooth screen-change entrance on route switches. */
+@keyframes ab-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth GPU-composited skeleton shimmer sweep (transform only, zero repaints). */
+@keyframes ab-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@utility ab-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--muted);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--card) 72%, transparent) 50%,
+      transparent 100%
+    );
+    animation: ab-shimmer 1.5s linear infinite;
+    will-change: transform;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-shimmer::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Directional theme & accent transitions (View Transitions API). */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
+/* Dark → Light reverse radial: old dark layer sits on top and shrinks back into the button, avoiding a harsh white flash. */
+html[data-theme-direction="to-light"][data-theme-transition-style="radial"]::view-transition-old(root) {
+  z-index: 9999;
+}
+html[data-theme-direction="to-light"][data-theme-transition-style="radial"]::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* Graceful cross-fade fallback for browsers without View Transitions API. */
+html[data-theme-transitioning="true"],
+html[data-theme-transitioning="true"] *,
+html[data-theme-transitioning="true"] *::before,
+html[data-theme-transitioning="true"] *::after {
+  transition:
+    background-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 260ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+html[data-theme-transitioning="true"][data-theme-direction="to-light"],
+html[data-theme-transitioning="true"][data-theme-direction="to-light"] *,
+html[data-theme-transitioning="true"][data-theme-direction="to-light"] *::before,
+html[data-theme-transitioning="true"][data-theme-direction="to-light"] *::after {
+  transition-duration: 380ms !important;
+}
+
+/* Space reserved below the content for the mobile bottom navigation + raised center button. */
 @utility pb-bottom-nav {
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Signature accent-aware gradient card inspired by modern mobile fintech wallets. */
+@utility fintech-hero-card {
+  background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-mid) 55%, var(--hero-to) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 16px 34px -12px var(--hero-shadow);
+}
+
+/* Semantic hero card variants for Cash Flow / financial health status. */
+@utility fintech-hero-positive {
+  background: linear-gradient(135deg, #10b981 0%, #059669 55%, #047857 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 16px 34px -12px rgba(5, 150, 105, 0.42);
+}
+
+@utility fintech-hero-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 58%, #b45309 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 16px 34px -12px rgba(217, 119, 6, 0.42);
+}
+
+@utility fintech-hero-negative {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 58%, #be123c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 16px 34px -12px rgba(225, 29, 72, 0.42);
+}
+
+/* Metallic sheen overlay for physical credit card previews. */
+@utility fintech-credit-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 16px 32px -12px rgba(15, 23, 42, 0.35);
+}
+
+/* Soft floating white/navy card for mobile transaction & metric rows. */
+@utility fintech-mobile-card {
+  border-radius: 1.125rem;
+  background-color: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 6px 22px -8px rgba(15, 23, 42, 0.08);
+}
+
+/* Standardized pastel icon tiles (calibrated for WCAG AA on both Light & Deep Fintech Navy Dark). */
+@utility tile-blue {
+  background-color: #eef4ff;
+  color: #2f5ee6;
+  border: 1px solid rgba(47, 94, 230, 0.14);
+}
+@utility tile-emerald {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid rgba(4, 120, 87, 0.14);
+}
+@utility tile-amber {
+  background-color: #fff7e6;
+  color: #b45309;
+  border: 1px solid rgba(180, 83, 9, 0.16);
+}
+@utility tile-rose {
+  background-color: #fff0f6;
+  color: #be123c;
+  border: 1px solid rgba(190, 18, 60, 0.14);
+}
+@utility tile-violet {
+  background-color: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid rgba(109, 40, 217, 0.14);
+}
+@utility tile-cyan {
+  background-color: #ecfeff;
+  color: #0e7490;
+  border: 1px solid rgba(14, 116, 144, 0.14);
+}
+
+.dark .fintech-mobile-card {
+  border-color: rgba(148, 163, 184, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 24px -10px rgba(2, 6, 23, 0.65);
+}
+
+.dark .tile-blue {
+  background-color: rgba(91, 139, 255, 0.14);
+  color: #82aaff;
+  border-color: rgba(91, 139, 255, 0.22);
+}
+.dark .tile-emerald {
+  background-color: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.22);
+}
+.dark .tile-amber {
+  background-color: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.22);
+}
+.dark .tile-rose {
+  background-color: rgba(244, 63, 94, 0.14);
+  color: #fb7185;
+  border-color: rgba(244, 63, 94, 0.22);
+}
+.dark .tile-violet {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.24);
+}
+.dark .tile-cyan {
+  background-color: rgba(6, 182, 212, 0.14);
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.22);
 }
 
 /* Landing page: in-page anchors ("Conhecer funcionalidades") glide unless the user asked for less motion. */

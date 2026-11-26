@@ -43,7 +43,7 @@ export function SourceBadge({ tx }: { tx: Transaction }) {
     return <span className={`${BASE} border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300`}>CSV</span>;
   }
   if (tx.source === "projected") {
-    return <span className={`${BASE} border-dashed border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-300`}>Previsto</span>;
+    return <span className={`${BASE} border-dashed border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-400/40 dark:bg-sky-500/14 dark:text-sky-300`}>Previsto</span>;
   }
-  return <span className={`${BASE} border-slate-200 bg-slate-50 text-slate-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300`}>Manual</span>;
+  return <span className={`${BASE} border-border bg-surface-subtle text-muted-foreground`}>Manual</span>;
 }
