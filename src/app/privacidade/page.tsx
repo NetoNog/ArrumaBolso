@@ -107,7 +107,8 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong className="text-foreground">Eliminação:</strong> zerar todos os dados financeiros da conta ou
-                encerrar o uso da plataforma.
+                excluir a conta definitivamente, o que apaga do nosso banco de dados o cadastro, todos os registros
+                financeiros e os comprovantes enviados.
               </li>
             </ul>
           </section>

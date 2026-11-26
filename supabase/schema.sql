@@ -397,3 +397,24 @@ drop policy if exists "receipts_owner_delete" on storage.objects;
 create policy "receipts_owner_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- ------------------------------------------- account deletion (LGPD)
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := auth.uid();
+begin
+  if current_user_id is null then
+    raise exception 'Not authenticated' using errcode = '28000';
+  end if;
+
+  delete from auth.users where id = current_user_id;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;

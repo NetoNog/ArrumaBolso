@@ -25,6 +25,7 @@ import {
 import { UserAvatar } from "@/components/common/user-avatar";
 import { AvatarPicker, toAvatarChoice, type AvatarChoice } from "@/components/settings/avatar-picker";
 import { CardsSettings } from "@/components/settings/cards-settings";
+import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -467,6 +468,8 @@ export function SettingsView() {
           </Button>
         </CardContent>
       </Card>
+
+      <DeleteAccountCard />
 
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
         <AlertDialogContent>
