@@ -1,54 +1,232 @@
 "use client";
 
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Plus, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  Upload,
+} from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { cn } from "cn";
 
 import { useDialogs } from "@/components/app/dialogs-provider";
+import { NotificationCenter } from "@/components/app/notification-center";
+import { usePrivacy } from "@/components/app/privacy-provider";
 import { SignOutButton } from "@/components/app/sign-out-button";
 import { findNavItem } from "@/components/app/navigation";
-import { Pill } from "@/components/common/pill";
+import { SimpleSelect } from "@/components/common/simple-select";
+import { UserAvatar } from "@/components/common/user-avatar";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { addMonths, formatMonthLabel } from "@/lib/dates";
-import { duplicateCandidates } from "@/lib/finance/metrics";
-import { formatBRL } from "@/lib/money";
+import { cardLabel } from "@/lib/import/issuers";
 import { useFinance } from "@/lib/store/finance-store";
+import { useIsLg } from "@/lib/use-media-query";
+
+const ALL_CARDS = "__all_cards__";
+const CARD_FILTER_ROUTES = new Set(["/", "/lancamentos", "/faturas", "/analises", "/projecao"]);
+const NO_MONTH_ROUTES = new Set(["/configuracoes", "/regras", "/importar"]);
 
 export function Header() {
   const pathname = usePathname();
   const item = findNavItem(pathname);
-  const { openCreate, openImport } = useDialogs();
-  const { status } = useFinance();
+  const { openCreate, openImport, openSearch } = useDialogs();
+  const { hidden, toggle: togglePrivacy } = usePrivacy();
+  const { status, state, reload, isRefreshing } = useFinance();
+  const isLg = useIsLg();
   const ready = status === "ready";
+  const isHome = pathname === "/";
+  const showMonthFilter = !NO_MONTH_ROUTES.has(pathname);
+  const showCardFilter = CARD_FILTER_ROUTES.has(pathname);
+  const firstName = state.settings.display_name.trim().split(/\s+/)[0] || "Olá";
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 bg-background/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:border-b lg:bg-background/85">
+      {/* Mobile Fintech Header (< lg) */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-2.5">
+          {isHome ? (
+            <Link href="/configuracoes" className="flex min-w-0 items-center gap-3 active:opacity-80">
+              {ready ? (
+                <UserAvatar
+                  name={state.settings.display_name}
+                  style={state.settings.avatar_style}
+                  seed={state.settings.avatar_seed}
+                  size={40}
+                />
+              ) : (
+                <span className="size-10 shrink-0 rounded-full bg-muted motion-safe:animate-pulse" aria-hidden />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-xs text-muted-foreground">Olá, {ready ? firstName : "..."}</p>
+                <p className="truncate text-base font-bold tracking-tight text-foreground">Bem-vindo de volta!</p>
+              </div>
+            </Link>
+          ) : (
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <Link
+                href="/"
+                aria-label="Voltar para início"
+                className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-card text-foreground shadow-panel transition-transform active:scale-95"
+              >
+                <ArrowLeft className="size-4" />
+              </Link>
+              <h1 className="truncate text-base font-bold tracking-tight text-foreground">{item.label}</h1>
+            </div>
+          )}
+
+          <div className={cn("flex shrink-0 items-center gap-1.5", !ready && "invisible")}>
+            <SyncIndicator />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePrivacy}
+              aria-label={hidden ? "Mostrar valores" : "Ocultar valores"}
+              aria-pressed={hidden}
+              className="size-10 rounded-2xl bg-card shadow-panel hover:bg-card"
+            >
+              {hidden ? <EyeOff className="size-[18px] text-brand" /> : <Eye className="size-[18px] text-foreground" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openSearch}
+              aria-label="Buscar lançamentos"
+              className="size-10 rounded-2xl bg-card shadow-panel hover:bg-card"
+            >
+              <Search className="size-[18px] text-foreground" />
+            </Button>
+            {!isLg ? <NotificationCenter mobile /> : null}
+          </div>
+        </div>
+
+        {/* Context-aware pill selectors on mobile (only where month/card filters actually apply) */}
+        {showMonthFilter || showCardFilter ? (
+          <div className={cn("flex items-center gap-2 px-4 pb-2.5", !ready && "invisible")}>
+            {showMonthFilter ? <MonthSwitcher className="flex-1 rounded-2xl border-0 shadow-panel" /> : null}
+            {showCardFilter ? <CardSwitcher className="flex-1" mobile /> : null}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Desktop Header (>= lg) */}
+      <div className="hidden items-center gap-3 px-8 py-3 lg:flex">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl dark:text-zinc-50">{item.title}</h1>
-          <p className="hidden truncate text-sm text-slate-500 sm:block dark:text-zinc-400">{item.subtitle}</p>
+          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{item.title}</h1>
+          <p className="truncate text-sm text-muted-foreground">{item.subtitle}</p>
         </div>
         <div className={cn("flex items-center gap-2", !ready && "invisible")}>
-          <MonthSwitcher className="hidden sm:flex" />
-          {/* Below lg the bottom navigation carries the "new expense" action. */}
-          <Button variant="outline" onClick={() => openCreate()} className="hidden h-9 lg:inline-flex">
+          <SyncIndicator />
+          {showCardFilter ? <CardSwitcher className="flex" /> : null}
+          {showMonthFilter ? <MonthSwitcher className="flex" /> : null}
+          <Button variant="outline" onClick={() => openCreate()} className="h-9">
             <Plus /> Novo Gasto
           </Button>
-          <AlertsBell />
-          <Button onClick={openImport} className="h-9 bg-blue-600 font-medium text-white hover:bg-blue-700" aria-label="Importar CSV">
-            <Upload /> <span className="hidden sm:inline">Importar CSV</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            disabled={isRefreshing}
+            onClick={async () => {
+              const ok = await reload({ force: true });
+              if (ok) toast.success("Dados atualizados");
+            }}
+            aria-label="Atualizar dados"
+            title="Atualizar dados"
+          >
+            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin text-brand")} />
+          </Button>
+          <Button variant="outline" size="icon" className="h-9 w-9" onClick={togglePrivacy} aria-label={hidden ? "Mostrar valores" : "Ocultar valores"} title={hidden ? "Mostrar valores" : "Ocultar valores"}>
+            {hidden ? <EyeOff className="size-4 text-brand" /> : <Eye className="size-4" />}
+          </Button>
+          {isLg ? <NotificationCenter /> : null}
+          <Button onClick={openImport} className="h-9 bg-brand font-medium text-white hover:bg-brand/90" aria-label="Importar fatura">
+            <Upload /> Importar
           </Button>
         </div>
-        {/* Outside the ready gate: signing out must work even if the data failed to load. */}
-        <span aria-hidden="true" className="hidden h-6 w-px bg-border sm:block" />
-        <SignOutButton compact className="sm:hidden" />
-        <SignOutButton className="hidden sm:inline-flex" />
-      </div>
-      <div className={cn("px-4 pb-3 sm:hidden", !ready && "invisible")}>
-        <MonthSwitcher className="w-full" />
+        <span aria-hidden="true" className="h-6 w-px bg-border" />
+        <SignOutButton />
       </div>
     </header>
+  );
+}
+
+function SyncIndicator() {
+  const { syncStatus, syncError, retrySync, isRefreshing } = useFinance();
+  if (syncStatus === "idle") {
+    if (!isRefreshing) return null;
+    return (
+      <span
+        className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-border/80 bg-card px-2.5 text-xs text-muted-foreground shadow-panel"
+        title="Atualizando dados em segundo plano..."
+      >
+        <RefreshCw className="size-3.5 animate-spin text-brand" />
+        <span className="hidden lg:inline">Atualizando...</span>
+      </span>
+    );
+  }
+  if (syncStatus === "saving") {
+    return (
+      <span
+        className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-border/80 bg-card px-2.5 text-xs text-muted-foreground shadow-panel"
+        title="Salvando alterações..."
+      >
+        <Loader2 className="size-3.5 animate-spin text-brand" />
+        <span className="hidden lg:inline">Salvando...</span>
+      </span>
+    );
+  }
+  return (
+    <Button
+      size="sm"
+      variant="destructive"
+      className="h-8 gap-1.5 rounded-xl px-2.5 text-xs"
+      onClick={retrySync}
+      title={syncError ?? "Erro ao salvar. Clique para tentar novamente."}
+    >
+      <AlertCircle className="size-3.5" />
+      <span className="hidden lg:inline">Erro ao salvar</span>
+      <RefreshCw className="size-3" />
+    </Button>
+  );
+}
+
+function CardSwitcher({ className, mobile = false }: { className?: string; mobile?: boolean }) {
+  const { state, selectedCardId, setSelectedCardId } = useFinance();
+  const visible = state.cards.filter((card) => !card.is_archived || card.id === selectedCardId);
+  if (visible.length < 2) return null;
+  const options = [
+    { value: ALL_CARDS, label: "Todos os cartões" },
+    ...visible.map((card) => ({
+      value: card.id,
+      label: card.parent_card_id ? `↳ ${cardLabel(card)}` : cardLabel(card),
+    })),
+  ];
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      {!mobile ? <CreditCard className="size-3.5 shrink-0 text-muted-foreground" /> : null}
+      <SimpleSelect
+        value={selectedCardId ?? ALL_CARDS}
+        options={options}
+        onChange={(value) => setSelectedCardId(value === ALL_CARDS ? null : value)}
+        size="sm"
+        className={cn(
+          "w-full min-w-32 bg-card shadow-panel lg:w-44",
+          mobile ? "h-10 rounded-2xl border-0" : "h-9",
+        )}
+        ariaLabel="Filtrar por cartão"
+      />
+    </div>
   );
 }
 
@@ -56,7 +234,7 @@ function MonthSwitcher({ className }: { className?: string }) {
   const { selectedMonth, setSelectedMonth, currentMonth } = useFinance();
   const isCurrent = selectedMonth === currentMonth;
   return (
-    <div className={cn("flex h-9 items-center justify-between rounded-lg border bg-card shadow-panel pointer-coarse:h-11", className)}>
+    <div className={cn("flex h-10 items-center justify-between rounded-xl border bg-card px-1 shadow-panel lg:h-9", className)}>
       <Button variant="ghost" size="icon-sm" aria-label="Fatura anterior" onClick={() => setSelectedMonth(addMonths(selectedMonth, -1))}>
         <ChevronLeft />
       </Button>
@@ -64,64 +242,15 @@ function MonthSwitcher({ className }: { className?: string }) {
         type="button"
         onClick={() => setSelectedMonth(currentMonth)}
         title="Voltar para a fatura atual"
-        className="flex items-center gap-1.5 px-1.5 text-sm font-medium"
+        className="flex items-center gap-1.5 px-1.5 text-xs font-semibold lg:text-sm lg:font-medium"
       >
-        <CalendarDays className="size-3.5 text-muted-foreground" />
-        <span className="num">Fatura {formatMonthLabel(selectedMonth)}</span>
-        {!isCurrent ? <span className={cn("size-1.5 rounded-full bg-blue-500")} aria-label="não é a fatura atual" /> : null}
+        <CalendarDays className="size-3.5 text-brand" />
+        <span className="num">{formatMonthLabel(selectedMonth)}</span>
+        {!isCurrent ? <span className="size-1.5 rounded-full bg-brand" aria-label="não é a fatura atual" /> : null}
       </button>
       <Button variant="ghost" size="icon-sm" aria-label="Próxima fatura" onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}>
         <ChevronRight />
       </Button>
     </div>
-  );
-}
-
-function AlertsBell() {
-  const { state, selectedMonth } = useFinance();
-  const { openEdit } = useDialogs();
-  const dismissed = new Set(state.settings.dismissed_alerts);
-  const groups = duplicateCandidates(state, selectedMonth).filter(
-    (group) => !dismissed.has(`duplicate:${group.map((tx) => tx.id).sort().join(",")}`),
-  );
-
-  return (
-    <Popover>
-      <PopoverTrigger
-        render={<Button variant="outline" size="icon" className="relative h-9 w-9" aria-label={`${groups.length} alertas pendentes`} />}
-      >
-        <Bell />
-        {groups.length > 0 ? (
-          <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
-            {groups.length}
-          </span>
-        ) : null}
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))] p-0">
-        <div className="flex items-center justify-between border-b px-3 py-2.5">
-          <p className="text-sm font-semibold">Pendentes de revisão</p>
-          <Pill tone={groups.length ? "rose" : "emerald"}>{groups.length ? `${groups.length} ativo(s)` : "Tudo certo"}</Pill>
-        </div>
-        <div className="grid gap-1 p-2">
-          {groups.length === 0 ? (
-            <p className="px-1 py-3 text-center text-xs text-muted-foreground">Nenhuma duplicidade na fatura {formatMonthLabel(selectedMonth)}.</p>
-          ) : (
-            groups.map((group) => (
-              <button
-                key={group[0].id}
-                type="button"
-                onClick={() => openEdit(group[group.length - 1].id)}
-                className="rounded-lg px-2 py-2 text-left hover:bg-muted"
-              >
-                <p className="text-sm font-medium">
-                  {group[0].clean_title} ({group.length}x <span className="num">{formatBRL(group[0].amount)}</span>)
-                </p>
-                <p className="text-xs text-muted-foreground">Mesmo valor no mesmo dia • clique para revisar</p>
-              </button>
-            ))
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }

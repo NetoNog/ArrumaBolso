@@ -1,12 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
-import { GlobalSearch } from "@/components/app/global-search";
-import { ImportWizardDialog } from "@/components/import/import-wizard-dialog";
-import { DeleteTransactionsDialog } from "@/components/transactions/delete-transactions-dialog";
-import { TransactionFormDialog, type TransactionFormDefaults } from "@/components/transactions/transaction-form-dialog";
+import type { TransactionFormDefaults } from "@/components/transactions/transaction-form-dialog";
 import { useFinance } from "@/lib/store/finance-store";
+
+// Load heavy modal bundles (CSV/OFX parser + papaparse, cmdk search, 1k-line form) strictly on demand.
+const TransactionFormDialog = dynamic(
+  () => import("@/components/transactions/transaction-form-dialog").then((m) => m.TransactionFormDialog),
+  { ssr: false },
+);
+const DeleteTransactionsDialog = dynamic(
+  () => import("@/components/transactions/delete-transactions-dialog").then((m) => m.DeleteTransactionsDialog),
+  { ssr: false },
+);
+const ImportWizardDialog = dynamic(
+  () => import("@/components/import/import-wizard-dialog").then((m) => m.ImportWizardDialog),
+  { ssr: false },
+);
+const GlobalSearch = dynamic(
+  () => import("@/components/app/global-search").then((m) => m.GlobalSearch),
+  { ssr: false },
+);
 
 interface DialogsContextValue {
   openCreate: (defaults?: TransactionFormDefaults) => void;
@@ -47,23 +63,27 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   return (
     <DialogsContext.Provider value={value}>
       {children}
-      <TransactionFormDialog
-        open={form.open}
-        onOpenChange={(open) => {
-          if (!open) setForm({ open: false });
-        }}
-        transaction={editing}
-        defaults={form.open ? form.defaults : undefined}
-      />
-      <DeleteTransactionsDialog
-        ids={deleteIds}
-        onOpenChange={(open) => {
-          if (!open) setDeleteIds(null);
-        }}
-        onDeleted={onDeleted}
-      />
-      <ImportWizardDialog open={importOpen} onOpenChange={setImportOpen} />
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      {form.open ? (
+        <TransactionFormDialog
+          open={form.open}
+          onOpenChange={(open) => {
+            if (!open) setForm({ open: false });
+          }}
+          transaction={editing}
+          defaults={form.defaults}
+        />
+      ) : null}
+      {deleteIds ? (
+        <DeleteTransactionsDialog
+          ids={deleteIds}
+          onOpenChange={(open) => {
+            if (!open) setDeleteIds(null);
+          }}
+          onDeleted={onDeleted}
+        />
+      ) : null}
+      {importOpen ? <ImportWizardDialog open={importOpen} onOpenChange={setImportOpen} /> : null}
+      {searchOpen ? <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} /> : null}
     </DialogsContext.Provider>
   );
 }

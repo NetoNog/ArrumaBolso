@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/app/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 // Figtree, the typeface of the Astryx design system (Meta). Variable font: one
@@ -12,9 +13,28 @@ import "./globals.css";
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin", "latin-ext"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "ArrumaBolso — Inteligência Financeira Pessoal",
-  description: "Faturas, parcelas, assinaturas e projeção de 12 meses em um painel só.",
+  metadataBase: getSiteUrl(),
+  title: {
+    default: "ArrumaBolso — Seu dinheiro no controle. Cada centavo no lugar.",
+    template: "%s | ArrumaBolso",
+  },
+  description:
+    "Importe faturas e extratos em CSV ou OFX sem duplicidade, veja seu Saldo Livre Real, projete 12 meses e controle cartões, metas e pets no celular ou desktop.",
   appleWebApp: { capable: true, title: "ArrumaBolso", statusBarStyle: "default" },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "ArrumaBolso",
+    title: "ArrumaBolso — Seu dinheiro no controle. Cada centavo no lugar.",
+    description:
+      "Abandone as planilhas: importe faturas CSV/OFX sem duplicidade, veja seu Saldo Livre Real, projete 12 meses e use como app no celular ou desktop.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ArrumaBolso — Cada centavo no lugar.",
+    description:
+      "Controle financeiro pessoal com CSV/OFX multi-bancos, Saldo Livre Real, projeção de 12 meses, alertas inteligentes e PWA instalável.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,16 +46,21 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
   // Matches --background so the status bar blends into the header.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f8fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0f1d" },
   ],
 };
+
+const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("arrumabolso.theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var a=localStorage.getItem("arrumabolso.accent");if(a==="emerald"||a==="violet"||a==="slate"){document.documentElement.setAttribute("data-accent",a);}}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${figtree.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider>
           <TooltipProvider>
             {children}
             <Toaster
