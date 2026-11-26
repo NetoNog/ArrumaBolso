@@ -9,7 +9,11 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:start": "pnpm dlx supabase start",
+    "db:stop": "pnpm dlx supabase stop",
+    "db:status": "pnpm dlx supabase status",
+    "db:migrate": "pnpm dlx supabase migration up"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
