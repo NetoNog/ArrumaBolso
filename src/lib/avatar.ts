@@ -1,10 +1,10 @@
-import { Avatar, Style } from "@dicebear/core";
+import type { Style } from "@dicebear/core";
 
 /**
  * Profile picture styles from DiceBear (https://github.com/dicebear/dicebear).
  * Only styles that need no attribution are offered (CC0 or free for commercial
- * use). Each definition is a JSON file loaded on demand, so the bundle only
- * pays for the styles a user actually sees.
+ * use). Both `@dicebear/core` (~170 KB) and each style JSON are loaded lazily on
+ * demand, so pages without a custom avatar pay zero bundle cost.
  */
 export const AVATAR_STYLES = [
   { id: "notionists-neutral", label: "Notionists", load: () => import("@dicebear/styles/notionists-neutral.json") },
@@ -30,7 +30,9 @@ function loadStyle(id: AvatarStyleId): Promise<Style> {
   if (!cached) {
     const entry = AVATAR_STYLES.find((style) => style.id === id);
     if (!entry) return Promise.reject(new Error(`Estilo de avatar desconhecido: ${id}`));
-    cached = entry.load().then((module) => new Style(module.default));
+    cached = Promise.all([import("@dicebear/core"), entry.load()]).then(
+      ([core, module]) => new core.Style(module.default),
+    );
     // A failed download must not poison the cache: the next render retries.
     cached.catch(() => styleCache.delete(id));
     styleCache.set(id, cached);
@@ -40,8 +42,8 @@ function loadStyle(id: AvatarStyleId): Promise<Style> {
 
 /** Renders the avatar as a `data:image/svg+xml` URI. */
 export async function renderAvatar(styleId: AvatarStyleId, seed: string): Promise<string> {
-  const style = await loadStyle(styleId);
-  return new Avatar(style, { seed }).toDataUri();
+  const [core, style] = await Promise.all([import("@dicebear/core"), loadStyle(styleId)]);
+  return new core.Avatar(style, { seed }).toDataUri();
 }
 
 /** Random seeds for the picker; any string is a valid seed. */

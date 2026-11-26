@@ -1,48 +1,32 @@
 /**
- * Non-destructive reconciliation engine for Nubank credit card CSV exports.
- *
- * Guarantees:
- *  - Each CSV row gets a deterministic `unique_hash` (date | raw title | amount | same-day occurrence).
- *  - Re-importing the same (or a later, more complete) file never duplicates rows.
- *  - Rows edited by the user (`is_user_edited`) are never overwritten.
- *  - Rows deleted by the user (`deleted_csv_hashes`) never come back unless explicitly restored.
- *  - Manual transactions are never touched.
+ * Non-destructive reconciliation engine for credit card and bank statements (CSV/OFX).
+ * Parsing lives in `@/lib/import`.
  */
-import Papa from "papaparse";
-
-import { categorize, extractInstallment, type InstallmentInfo } from "@/lib/categorization";
-import { addMonths, addMonthsToDate, normalizeDate } from "@/lib/dates";
+import { categorize, extractInstallment } from "@/lib/categorization";
+import { addMonths, addMonthsToDate } from "@/lib/dates";
 import type {
+  CategorizationRule,
+  Category,
   FinanceState,
   ImportBatch,
   InvoiceMonth,
-  IsoDate,
+  PaymentMethod,
   Transaction,
-  TransactionType,
 } from "@/lib/domain/types";
-import { newId, sha256Hex, stableKey } from "@/lib/hash";
-import { formatFixed2, parseAmount } from "@/lib/money";
+import { parseStatementCsv } from "@/lib/import/csv";
+import {
+  autoSuggestCategory,
+  findCategoryForPreset,
+  presetCategoryId,
+  presetFromCategoryId,
+  type CategorySuggestionSource,
+} from "@/lib/import/merchant-categories";
+import type { CsvParseError, CsvParseResult, ParsedCsvRow } from "@/lib/import/rows";
+import { newId, stableKey } from "@/lib/hash";
+import { formatFixed2 } from "@/lib/money";
 
-export interface ParsedCsvRow {
-  lineNumber: number;
-  date: IsoDate;
-  rawTitle: string;
-  amount: number;
-  type: TransactionType;
-  occurrenceIndex: number;
-  uniqueHash: string;
-  installment: InstallmentInfo | null;
-}
-
-export interface CsvParseError {
-  lineNumber: number;
-  message: string;
-}
-
-export interface CsvParseResult {
-  rows: ParsedCsvRow[];
-  errors: CsvParseError[];
-}
+export { computeUniqueHash, detectType } from "@/lib/import/rows";
+export type { CsvParseError, CsvParseResult, ParsedCsvRow } from "@/lib/import/rows";
 
 export type RowStatus = "new" | "protected" | "existing" | "deleted";
 export type RowAlert = "duplicate_same_day" | "installment" | "payment";
@@ -53,7 +37,14 @@ export interface ReconciledRow extends ParsedCsvRow {
   replacesProjectedId: string | null;
   installmentGroupId: string | null;
   suggestedCleanTitle: string;
+  /** Existing category id, a virtual `preset:<key>` id (auto-categorised) or null. */
   suggestedCategoryId: string | null;
+  /** How `suggestedCategoryId` was inferred automatically. */
+  suggestedCategorySource?: CategorySuggestionSource;
+  /** Subscription matched via an explicit rule, if any. */
+  suggestedSubscriptionId?: string | null;
+  /** True when a matching rule flags the row as ignored. */
+  suggestedIgnored?: boolean;
   alerts: RowAlert[];
 }
 
@@ -74,42 +65,16 @@ export interface ReconciliationReport {
 }
 
 export interface ImportDecisions {
-  /** Category chosen by the user for new rows, keyed by CSV line number. */
   categoryOverrides: Record<number, string | null>;
-  /** Hashes of user-deleted rows that should be restored by this import. */
   restoreHashes: ReadonlySet<string>;
+  /** Card the statement belongs to (`null` for bank-account statements). */
+  cardId: string | null;
+  /** When true, manual category choices in `categoryOverrides` are saved as reusable rules. */
+  learnRules?: boolean;
+  /** When true, any remaining uncategorised expenses fall back to the "Outros" category. */
+  fallbackToOther?: boolean;
 }
 
-const HEADER_ALIASES: Record<"date" | "title" | "amount", readonly string[]> = {
-  date: ["date", "data"],
-  title: ["title", "titulo", "título", "descricao", "descrição", "description", "estabelecimento"],
-  amount: ["amount", "valor", "value"],
-};
-
-function resolveColumn(fields: readonly string[], key: keyof typeof HEADER_ALIASES): string | null {
-  const aliases = HEADER_ALIASES[key];
-  return fields.find((field) => aliases.includes(field.trim().toLowerCase())) ?? null;
-}
-
-export async function computeUniqueHash(
-  date: IsoDate,
-  rawTitle: string,
-  amount: number,
-  occurrenceIndex: number,
-): Promise<string> {
-  return sha256Hex(`${date}|${rawTitle.trim()}|${formatFixed2(amount)}|${occurrenceIndex}`);
-}
-
-export function detectType(rawTitle: string, amount: number): TransactionType {
-  if (amount < 0 || rawTitle.trim().toLowerCase() === "pagamento recebido") return "payment";
-  return "expense";
-}
-
-/**
- * Deterministic id shared by every installment of the same purchase. The origin
- * month (invoice of parcel 1) makes it stable across months and distinguishes
- * two identical purchases made in different cycles.
- */
 export function installmentGroupId(
   baseTitle: string,
   total: number,
@@ -121,68 +86,9 @@ export function installmentGroupId(
   return `inst_${stableKey(`${baseTitle.trim().toLowerCase()}|${total}|${formatFixed2(amount)}|${originMonth}`)}`;
 }
 
+/** Parses a Nubank `date,title,amount` export (legacy hashing scope). */
 export async function parseNubankCsv(text: string): Promise<CsvParseResult> {
-  const parsed = Papa.parse<Record<string, string>>(text.replace(/^﻿/, ""), {
-    header: true,
-    skipEmptyLines: "greedy",
-    transformHeader: (header) => header.trim(),
-  });
-
-  const errors: CsvParseError[] = parsed.errors.map((error) => ({
-    lineNumber: (error.row ?? 0) + 2,
-    message: error.message,
-  }));
-
-  const fields = parsed.meta.fields ?? [];
-  const dateCol = resolveColumn(fields, "date");
-  const titleCol = resolveColumn(fields, "title");
-  const amountCol = resolveColumn(fields, "amount");
-  if (!dateCol || !titleCol || !amountCol) {
-    return {
-      rows: [],
-      errors: [...errors, { lineNumber: 1, message: "Cabeçalho inválido: esperado date,title,amount." }],
-    };
-  }
-
-  const occurrences = new Map<string, number>();
-  const rows: ParsedCsvRow[] = [];
-
-  for (const [index, record] of parsed.data.entries()) {
-    const lineNumber = index + 2;
-    const date = normalizeDate(record[dateCol] ?? "");
-    const rawTitle = (record[titleCol] ?? "").trim();
-    const amount = parseAmount(record[amountCol] ?? "");
-
-    if (!date) {
-      errors.push({ lineNumber, message: `Data inválida: "${record[dateCol] ?? ""}"` });
-      continue;
-    }
-    if (!rawTitle) {
-      errors.push({ lineNumber, message: "Título vazio." });
-      continue;
-    }
-    if (amount === null) {
-      errors.push({ lineNumber, message: `Valor inválido: "${record[amountCol] ?? ""}"` });
-      continue;
-    }
-
-    const key = `${date}|${rawTitle}|${formatFixed2(amount)}`;
-    const occurrenceIndex = (occurrences.get(key) ?? 0) + 1;
-    occurrences.set(key, occurrenceIndex);
-
-    rows.push({
-      lineNumber,
-      date,
-      rawTitle,
-      amount,
-      type: detectType(rawTitle, amount),
-      occurrenceIndex,
-      uniqueHash: await computeUniqueHash(date, rawTitle, amount, occurrenceIndex),
-      installment: extractInstallment(rawTitle),
-    });
-  }
-
-  return { rows, errors };
+  return parseStatementCsv(text, { issuer: "nubank" });
 }
 
 export function reconcile(
@@ -229,7 +135,30 @@ export function reconcile(
     if (row.installment) alerts.push("installment");
     if (row.type === "payment") alerts.push("payment");
 
-    const suggestion = categorize(row.rawTitle, state.categorization_rules);
+    const paymentMethod: PaymentMethod = row.paymentMethod ?? "credit_card";
+    const suggestion = categorize(row.rawTitle, state.categorization_rules, { amount: row.amount, paymentMethod });
+
+    let suggestedCategoryId: string | null = null;
+    let suggestedCategorySource: CategorySuggestionSource = null;
+    if (row.type !== "payment" && row.type !== "income") {
+      if (projected?.category_id) {
+        suggestedCategoryId = projected.category_id;
+        suggestedCategorySource = "history";
+      } else if (suggestion.categoryId) {
+        suggestedCategoryId = suggestion.categoryId;
+        suggestedCategorySource = "rule";
+      } else {
+        const auto = autoSuggestCategory({
+          rawTitle: row.rawTitle,
+          cleanTitle: suggestion.cleanTitle,
+          bankCategory: row.bankCategory,
+          categories: state.categories,
+          transactions: state.transactions,
+        });
+        suggestedCategoryId = auto.categoryId;
+        suggestedCategorySource = auto.source;
+      }
+    }
 
     return {
       ...row,
@@ -238,7 +167,10 @@ export function reconcile(
       replacesProjectedId: projected?.id ?? null,
       installmentGroupId: groupId,
       suggestedCleanTitle: suggestion.cleanTitle,
-      suggestedCategoryId: row.type === "payment" ? null : (projected?.category_id ?? suggestion.categoryId),
+      suggestedCategoryId,
+      suggestedCategorySource,
+      suggestedSubscriptionId: suggestion.subscriptionId,
+      suggestedIgnored: suggestion.markIgnored,
       alerts,
     };
   });
@@ -278,11 +210,23 @@ export function applyImport(
   now: string = new Date().toISOString(),
 ): ApplyImportResult {
   const batchId = newId();
+  const categories = [...state.categories];
+  const rules: CategorizationRule[] = [...state.categorization_rules];
   const transactions = [...state.transactions];
   const indexById = new Map(transactions.map((tx, index) => [tx.id, index]));
   const replacedProjectionIds: string[] = [];
   let deletedHashes = state.deleted_csv_hashes;
   let newCount = 0;
+
+  const resolveCategoryId = (id: string | null): string | null => {
+    const preset = presetFromCategoryId(id);
+    if (!preset) return id;
+    const existing = findCategoryForPreset(categories, preset);
+    if (existing) return existing.id;
+    const created: Category = { id: newId(), name: preset.name, icon: preset.icon, color: preset.color, monthly_limit: 0 };
+    categories.push(created);
+    return created.id;
+  };
 
   const rowsToWrite = report.rows.filter(
     (row) => row.status === "new" || (row.status === "deleted" && decisions.restoreHashes.has(row.uniqueHash)),
@@ -293,20 +237,54 @@ export function applyImport(
       deletedHashes = deletedHashes.filter((item) => item.unique_hash !== row.uniqueHash);
     }
 
-    const categoryId =
-      row.lineNumber in decisions.categoryOverrides
-        ? decisions.categoryOverrides[row.lineNumber]
-        : row.suggestedCategoryId;
-    const subscriptionId = row.type === "expense" ? findSubscriptionId(state, row.suggestedCleanTitle) : null;
+    const chosenRawCategory =
+      row.lineNumber in decisions.categoryOverrides ? decisions.categoryOverrides[row.lineNumber] : row.suggestedCategoryId;
+    const withFallback =
+      !chosenRawCategory && decisions.fallbackToOther && row.type === "expense"
+        ? presetCategoryId("outros")
+        : chosenRawCategory;
+    const categoryId = row.type === "payment" || row.type === "income" ? null : resolveCategoryId(withFallback);
+
+    // Learn a reusable rule whenever the user explicitly picked a category during review.
+    if (decisions.learnRules && row.type === "expense" && row.lineNumber in decisions.categoryOverrides && categoryId) {
+      const pattern = (extractInstallment(row.rawTitle)?.baseTitle ?? row.rawTitle).trim().toLowerCase();
+      if (pattern.length >= 2) {
+        const existingRuleIdx = rules.findIndex((r) => !r.is_regex && r.pattern.trim().toLowerCase() === pattern);
+        if (existingRuleIdx >= 0) {
+          rules[existingRuleIdx] = { ...rules[existingRuleIdx], category_id: categoryId };
+        } else {
+          rules.push({
+            id: newId(),
+            pattern,
+            clean_name_override: null,
+            category_id: categoryId,
+            priority: 100,
+            is_regex: false,
+            min_amount: null,
+            max_amount: null,
+            payment_method: null,
+            subscription_id: null,
+            mark_ignored: false,
+          });
+        }
+      }
+    }
+    const subscriptionId =
+      row.type === "expense"
+        ? (row.suggestedSubscriptionId ?? findSubscriptionId(state, row.suggestedCleanTitle))
+        : null;
+    const paymentMethod: PaymentMethod = row.paymentMethod ?? "credit_card";
+    const cardId = paymentMethod === "credit_card" ? decisions.cardId : null;
 
     const projectedIndex = row.replacesProjectedId ? indexById.get(row.replacesProjectedId) : undefined;
     if (projectedIndex !== undefined) {
       const projected = transactions[projectedIndex];
       transactions[projectedIndex] = projected.is_user_edited
-        ? { ...projected, source: "csv", raw_title: row.rawTitle, unique_hash: row.uniqueHash, batch_id: batchId, updated_at: now }
+        ? { ...projected, source: "csv", raw_title: row.rawTitle, unique_hash: row.uniqueHash, batch_id: batchId, card_id: projected.card_id ?? cardId, updated_at: now }
         : {
             ...projected,
             source: "csv",
+            card_id: cardId,
             batch_id: batchId,
             date: row.date,
             invoice_month: report.invoiceMonth,
@@ -331,15 +309,22 @@ export function applyImport(
       clean_title: row.type === "payment" ? "Pagamento recebido" : row.suggestedCleanTitle,
       amount: row.amount,
       type: row.type,
-      payment_method: "nubank_card",
-      category_id: row.type === "payment" ? null : categoryId,
+      payment_method: paymentMethod,
+      card_id: cardId,
+      category_id: categoryId,
       source: "csv",
       is_user_edited: false,
       locked_fields: [],
-      is_ignored: false,
+      is_ignored: Boolean(row.suggestedIgnored),
       subscription_id: subscriptionId,
       income_source_id: null,
       notes: "",
+      tags: [],
+      split_group_id: null,
+      refund_of_transaction_id: null,
+      original_currency: row.originalCurrency ?? null,
+      original_amount: row.originalAmount ?? null,
+      iof_amount: null,
       installment_group_id: row.installmentGroupId,
       installment_current: row.installment?.current ?? null,
       installment_total: row.installment?.total ?? null,
@@ -351,7 +336,6 @@ export function applyImport(
     transactions.push(tx);
     newCount += 1;
 
-    // Project the remaining parcels into future invoices (unless they already exist).
     if (row.installment && row.installmentGroupId && row.installment.current < row.installment.total) {
       for (let parcel = row.installment.current + 1; parcel <= row.installment.total; parcel += 1) {
         const offset = parcel - row.installment.current;
@@ -381,6 +365,7 @@ export function applyImport(
     id: batchId,
     filename: report.filename,
     invoice_month: report.invoiceMonth,
+    card_id: decisions.cardId,
     new_count: newCount,
     skipped_count: summary.existingCount + summary.deletedCount - restoredCount,
     protected_count: summary.protectedCount,
@@ -392,6 +377,8 @@ export function applyImport(
   return {
     state: {
       ...state,
+      categories,
+      categorization_rules: rules,
       transactions,
       deleted_csv_hashes: deletedHashes,
       import_batches: [batch, ...state.import_batches],
@@ -400,10 +387,6 @@ export function applyImport(
   };
 }
 
-/**
- * Reverts a batch: removes the rows it created that the user has not edited and
- * turns installments it had matched back into projections.
- */
 export function undoImportBatch(state: FinanceState, batchId: string, now: string = new Date().toISOString()): FinanceState {
   const batch = state.import_batches.find((item) => item.id === batchId);
   if (!batch || batch.undone_at) return state;
@@ -418,7 +401,6 @@ export function undoImportBatch(state: FinanceState, batchId: string, now: strin
     if (replaced.has(tx.id)) {
       transactions.push({ ...tx, source: "projected", unique_hash: null, batch_id: null, updated_at: now });
     }
-    // Any other unedited row created by this batch (CSV or projected) is dropped.
   }
 
   return {

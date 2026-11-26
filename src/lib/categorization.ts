@@ -1,4 +1,4 @@
-import type { CategorizationRule } from "@/lib/domain/types";
+import type { CategorizationRule, PaymentMethod } from "@/lib/domain/types";
 
 /** Prefixes that Nubank/acquirers prepend to merchant names. */
 const PREFIX_PATTERNS: readonly RegExp[] = [
@@ -45,22 +45,83 @@ export function cleanTitle(rawTitle: string): string {
   return titleCase(text || rawTitle.trim());
 }
 
+export interface RuleMatchContext {
+  amount?: number;
+  paymentMethod?: PaymentMethod;
+}
+
+export function isValidRulePattern(pattern: string, isRegex: boolean): boolean {
+  const trimmed = pattern.trim();
+  if (!trimmed) return false;
+  if (!isRegex) return true;
+  try {
+    new RegExp(trimmed, "i");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function ruleMatches(
+  rule: CategorizationRule,
+  rawTitle: string,
+  context?: RuleMatchContext,
+): boolean {
+  const pattern = rule.pattern.trim();
+  if (!pattern) return false;
+
+  if (rule.is_regex) {
+    try {
+      if (!new RegExp(pattern, "i").test(rawTitle)) return false;
+    } catch {
+      return false;
+    }
+  } else {
+    if (!rawTitle.toLowerCase().includes(pattern.toLowerCase())) return false;
+  }
+
+  if (context?.amount !== undefined) {
+    const abs = Math.abs(context.amount);
+    if (rule.min_amount !== null && rule.min_amount !== undefined && abs < rule.min_amount) return false;
+    if (rule.max_amount !== null && rule.max_amount !== undefined && abs > rule.max_amount) return false;
+  }
+
+  if (rule.payment_method && context?.paymentMethod && rule.payment_method !== context.paymentMethod) {
+    return false;
+  }
+
+  return true;
+}
+
 export function findMatchingRule(
   rawTitle: string,
   rules: readonly CategorizationRule[],
+  context?: RuleMatchContext,
 ): CategorizationRule | null {
-  const haystack = rawTitle.toLowerCase();
   const sorted = [...rules].sort((a, b) => b.priority - a.priority);
-  return sorted.find((rule) => rule.pattern.trim() !== "" && haystack.includes(rule.pattern.trim().toLowerCase())) ?? null;
+  return sorted.find((rule) => ruleMatches(rule, rawTitle, context)) ?? null;
 }
 
 export interface Categorized {
   cleanTitle: string;
   categoryId: string | null;
+  subscriptionId: string | null;
+  markIgnored: boolean;
+  matchedRuleId: string | null;
 }
 
-export function categorize(rawTitle: string, rules: readonly CategorizationRule[]): Categorized {
-  const rule = findMatchingRule(rawTitle, rules);
+export function categorize(
+  rawTitle: string,
+  rules: readonly CategorizationRule[],
+  context?: RuleMatchContext,
+): Categorized {
+  const rule = findMatchingRule(rawTitle, rules, context);
   const clean = rule?.clean_name_override?.trim() || cleanTitle(rawTitle);
-  return { cleanTitle: clean, categoryId: rule?.category_id ?? null };
+  return {
+    cleanTitle: clean,
+    categoryId: rule?.category_id ?? null,
+    subscriptionId: rule?.subscription_id ?? null,
+    markIgnored: Boolean(rule?.mark_ignored),
+    matchedRuleId: rule?.id ?? null,
+  };
 }

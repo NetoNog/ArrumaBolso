@@ -6,7 +6,7 @@ import type { FinanceState } from "@/lib/domain/types";
 import { committedFor, invoiceTotal, expensesOfMonth } from "@/lib/finance/metrics";
 import { applyImport, parseNubankCsv, reconcile, undoImportBatch } from "@/lib/nubank-parser";
 
-const NO_DECISIONS = { categoryOverrides: {}, restoreHashes: new Set<string>() };
+const NO_DECISIONS = { categoryOverrides: {}, restoreHashes: new Set<string>(), cardId: null };
 
 async function importCsv(state: FinanceState, csv: string, month = "2026-12") {
   const report = reconcile(await parseNubankCsv(csv), state, { filename: "Nubank_2026-12-09.csv", invoiceMonth: month });
@@ -102,6 +102,7 @@ describe("reconciliation matrix", () => {
     const restored = applyImport(afterDelete, restoreReport, {
       categoryOverrides: {},
       restoreHashes: new Set([duplicate.unique_hash as string]),
+      cardId: null,
     }).state;
     expect(restored.transactions.filter((tx) => tx.raw_title === "64900927edinelma")).toHaveLength(2);
     expect(restored.deleted_csv_hashes).toHaveLength(0);

@@ -101,7 +101,7 @@ describe("cash flow", () => {
     let next = receiveIncome(state, source.id, { date: "2026-11-05", amount: 5000 });
     next = add(next, { type: "income", date: "2026-11-10", amount: 300, title: "Venda" });
     next = add(next, { date: "2026-11-06", amount: 1200.5, payment_method: "boleto" });
-    next = add(next, { date: "2026-11-06", amount: 99.5, payment_method: "nubank_card" });
+    next = add(next, { date: "2026-11-06", amount: 99.5, payment_method: "credit_card" });
     // Card payment: a transfer, not an outflow.
     next = add(next, { type: "payment", date: "2026-11-11", amount: 900 });
     return next;
@@ -111,7 +111,7 @@ describe("cash flow", () => {
     const summary = cashFlowSummary(scenario(), MONTH);
     expect(summary).toMatchObject({ inflow: 5300, outflow: 1300, balance: 4000 });
     expect(summary.savingsRate).toBeCloseTo(4000 / 5300);
-    expect(summary.outflowByMethod.map((row) => row.method)).toEqual(["boleto", "nubank_card"]);
+    expect(summary.outflowByMethod.map((row) => row.method)).toEqual(["boleto", "credit_card"]);
     expect(summary.inflowByOrigin).toEqual([
       { label: "Salário ACME", amount: 5000 },
       { label: "Outras entradas", amount: 300 },

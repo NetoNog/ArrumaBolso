@@ -11,7 +11,7 @@ export function ImportWizardDialog({ open, onOpenChange }: { open: boolean; onOp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Importar CSV do Nubank</DialogTitle>
+          <DialogTitle>Importar fatura do cartão</DialogTitle>
           <DialogDescription>
             Conciliação não-destrutiva: nada é gravado antes da sua confirmação, e edições manuais nunca são sobrescritas.
           </DialogDescription>

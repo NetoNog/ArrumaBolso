@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatMonthLabel } from "@/lib/dates";
 import { restoreDeletedHash } from "@/lib/domain/operations";
 import type { ImportBatch } from "@/lib/domain/types";
+import { cardLabel } from "@/lib/import/issuers";
 import { undoImportBatch } from "@/lib/nubank-parser";
 import { useFinance } from "@/lib/store/finance-store";
 
@@ -28,6 +29,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short",
 export function ImportHistory() {
   const { state, commit } = useFinance();
   const [undoTarget, setUndoTarget] = useState<ImportBatch | null>(null);
+
+  const cardName = (batch: ImportBatch) => {
+    const card = state.cards.find((item) => item.id === batch.card_id);
+    return card ? cardLabel(card) : "—";
+  };
 
   const removableCount = (batch: ImportBatch) =>
     state.transactions.filter((tx) => tx.batch_id === batch.id && !tx.is_user_edited).length;
@@ -47,6 +53,7 @@ export function ImportHistory() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="pl-4">Arquivo</TableHead>
+                  <TableHead>Cartão</TableHead>
                   <TableHead>Fatura</TableHead>
                   <TableHead>Data/hora</TableHead>
                   <TableHead className="text-right">Novos</TableHead>
@@ -59,6 +66,7 @@ export function ImportHistory() {
                 {state.import_batches.map((batch) => (
                   <TableRow key={batch.id} className={batch.undone_at ? "text-muted-foreground" : undefined}>
                     <TableCell className="num pl-4 text-xs">{batch.filename}</TableCell>
+                    <TableCell className="text-xs">{cardName(batch)}</TableCell>
                     <TableCell>{formatMonthLabel(batch.invoice_month)}</TableCell>
                     <TableCell className="num text-xs">{dateTimeFormatter.format(new Date(batch.created_at))}</TableCell>
                     <TableCell className="num text-right">{batch.new_count}</TableCell>
@@ -77,7 +85,7 @@ export function ImportHistory() {
                 ))}
                 {state.import_batches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                       Nenhuma importação ainda.
                     </TableCell>
                   </TableRow>

@@ -78,7 +78,7 @@ describe("transactions CRUD", () => {
   it("stores payments as negative amounts and subscriptions as recurring", () => {
     const state = createTransaction(emptyState(), {
       type: "expense",
-      payment_method: "nubank_card",
+      payment_method: "credit_card",
       date: "2026-11-20",
       title: "Netflix",
       amount: 39.9,

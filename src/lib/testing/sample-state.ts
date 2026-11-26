@@ -3,6 +3,7 @@
  * reconciliation tests. Never loaded by the app.
  */
 import type {
+  Card,
   CategorizationRule,
   Category,
   FinanceState,
@@ -142,16 +143,20 @@ export async function buildSampleState(): Promise<FinanceState> {
     active: true,
   }));
 
+  const card: Card = { id: newId(), name: "Nubank", issuer: "nubank", last_four: null, color: "#820AD1" };
+
   let state: FinanceState = {
     settings: {
       display_name: "Minha Carteira",
       avatar_style: null,
       avatar_seed: null,
+      theme: "light",
       closing_day: 2,
       monthly_income: 4800,
       dismissed_alerts: [],
     },
     categories,
+    cards: [card],
     transactions: [],
     import_batches: [],
     deleted_csv_hashes: [],
@@ -167,7 +172,7 @@ export async function buildSampleState(): Promise<FinanceState> {
   for (const item of imports) {
     const parsed = await parseNubankCsv(item.csv);
     const report = reconcile(parsed, state, { filename: item.filename, invoiceMonth: item.month });
-    state = applyImport(state, report, { categoryOverrides: {}, restoreHashes: new Set() }, item.at).state;
+    state = applyImport(state, report, { categoryOverrides: {}, restoreHashes: new Set(), cardId: card.id }, item.at).state;
   }
 
   const salary: Transaction = {
@@ -180,6 +185,7 @@ export async function buildSampleState(): Promise<FinanceState> {
     amount: 4800,
     type: "income",
     payment_method: "pix_debit",
+    card_id: null,
     category_id: null,
     source: "manual",
     is_user_edited: false,
