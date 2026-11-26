@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { QuickAddBar } from "@/components/app/quick-add-bar";
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMonthLabel } from "@/lib/dates";
@@ -17,6 +18,7 @@ export function TransactionsView() {
 
   return (
     <div className="grid gap-4">
+      <QuickAddBar />
       <Tabs value={scope} onValueChange={(value) => setScope(value as Scope)}>
         <TabsList>
           <TabsTrigger value="month" className="px-3">

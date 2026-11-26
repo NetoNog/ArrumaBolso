@@ -6,7 +6,7 @@ import { ImportView } from "@/components/views/import-view";
 // navigations into this page intentionally wait for that data to load.
 export const instant = false;
 
-export const metadata: Metadata = { title: "Importar CSV • ArrumaBolso" };
+export const metadata: Metadata = { title: "Importar fatura • ArrumaBolso" };
 
 export default function Page() {
   return <ImportView />;

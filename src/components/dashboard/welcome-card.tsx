@@ -20,7 +20,7 @@ export function WelcomeCard() {
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Vamos arrumar o seu bolso</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Sua conta está vazia. Importe o CSV da fatura do Nubank (no app: Fatura → Exportar) ou registre um gasto manualmente. Os
+            Sua conta está vazia. Importe a fatura do seu cartão em CSV ou OFX (Nubank, Inter, Itaú, Bradesco e outros) ou registre um gasto manualmente. Os
             indicadores, alertas e a projeção de 12 meses aparecem assim que houver lançamentos.
           </p>
           <ol className="mt-4 grid gap-1.5 text-sm">
@@ -31,7 +31,7 @@ export function WelcomeCard() {
               </Link>
             </Step>
             <Step done={false} index={2}>
-              Importe o CSV da fatura atual
+              Importe a fatura atual (CSV ou OFX)
             </Step>
             <Step done={false} index={3}>
               Marque as assinaturas e revise os alertas
@@ -40,7 +40,7 @@ export function WelcomeCard() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={openImport} className="h-10 bg-brand text-white hover:bg-blue-700 dark:hover:bg-blue-500">
-            <Upload /> Importar CSV
+            <Upload /> Importar fatura
           </Button>
           <Button variant="outline" className="h-10" onClick={() => openCreate()}>
             <Plus /> Novo gasto
