@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/logo";
+import { LEGAL_CONTROLLER } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
@@ -102,6 +103,19 @@ export default function TermsOfUsePage() {
               Estes termos podem ser atualizados conforme o produto evolui. O uso contínuo após atualizações representa
               ciência e concordância com a versão vigente.
             </p>
+          </section>
+
+          <section className="grid gap-2.5">
+            <h2 className="text-lg font-semibold text-foreground">7. Responsável e contato</h2>
+            <p>
+              O ArrumaBolso é mantido por <strong className="text-foreground">{LEGAL_CONTROLLER.name}</strong>, pessoa
+              física. Dúvidas, solicitações e comunicações sobre estes termos podem ser enviadas para{" "}
+              <a href={`mailto:${LEGAL_CONTROLLER.email}`} className="font-medium text-brand hover:underline">
+                {LEGAL_CONTROLLER.email}
+              </a>
+              .
+            </p>
+            <p>Estes termos são regidos pela legislação brasileira.</p>
           </section>
         </div>
 

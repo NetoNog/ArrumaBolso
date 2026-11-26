@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/logo";
+import { LEGAL_CONTROLLER } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
@@ -45,6 +46,15 @@ export default function PrivacyPolicyPage() {
               finanças pessoais com privacidade total. Seus lançamentos, faturas, cartões, contas, metas e dados de pets
               pertencem exclusivamente a você — nunca vendemos, compartilhamos ou exibimos anúncios com base nos seus
               registros financeiros.
+            </p>
+            <p>
+              O controlador dos dados pessoais tratados no ArrumaBolso é{" "}
+              <strong className="text-foreground">{LEGAL_CONTROLLER.name}</strong>, pessoa física, que também atua como
+              encarregado pelo tratamento de dados (art. 41 da LGPD). Contato:{" "}
+              <a href={`mailto:${LEGAL_CONTROLLER.email}`} className="font-medium text-brand hover:underline">
+                {LEGAL_CONTROLLER.email}
+              </a>
+              .
             </p>
           </section>
 
@@ -91,10 +101,47 @@ export default function PrivacyPolicyPage() {
               <li>Sincronizar suas informações entre celular e computador quando você está conectado;</li>
               <li>Enviar e-mails estritamente transacionais (confirmação de cadastro e redefinição de senha).</li>
             </ul>
+            <p>
+              A base legal desse tratamento é a execução do contrato de uso da plataforma, do qual você é parte (art. 7º,
+              inciso V, da LGPD).
+            </p>
           </section>
 
           <section className="grid gap-2.5">
-            <h2 className="text-lg font-semibold text-foreground">5. Seus direitos (LGPD)</h2>
+            <h2 className="text-lg font-semibold text-foreground">5. Onde os dados ficam e com quem são compartilhados</h2>
+            <p>
+              Não vendemos nem cedemos seus dados. Eles são processados apenas pelos fornecedores de infraestrutura
+              necessários para o serviço funcionar:
+            </p>
+            <ul className="list-disc space-y-1.5 pl-5">
+              <li>
+                <strong className="text-foreground">Supabase:</strong> banco de dados, autenticação e armazenamento de
+                comprovantes, em servidores localizados nos Estados Unidos;
+              </li>
+              <li>
+                <strong className="text-foreground">Vercel:</strong> hospedagem do site e do aplicativo;
+              </li>
+              <li>
+                <strong className="text-foreground">Google:</strong> somente se você optar por entrar com a conta Google.
+              </li>
+            </ul>
+            <p>
+              Por isso, seus dados são transferidos para fora do Brasil. Essa transferência é necessária para a execução do
+              contrato de uso (art. 33, inciso IX, da LGPD) e esses fornecedores adotam padrões reconhecidos de segurança da
+              informação.
+            </p>
+          </section>
+
+          <section className="grid gap-2.5">
+            <h2 className="text-lg font-semibold text-foreground">6. Por quanto tempo guardamos</h2>
+            <p>
+              Seus dados ficam armazenados enquanto sua conta existir. Ao excluir a conta, o cadastro, os registros
+              financeiros e os comprovantes são apagados de forma definitiva.
+            </p>
+          </section>
+
+          <section className="grid gap-2.5">
+            <h2 className="text-lg font-semibold text-foreground">7. Seus direitos (LGPD)</h2>
             <p>A qualquer momento, diretamente em <strong className="text-foreground">Configurações</strong>, você pode:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               <li>
@@ -111,10 +158,18 @@ export default function PrivacyPolicyPage() {
                 financeiros e os comprovantes enviados.
               </li>
             </ul>
+            <p>
+              Para exercer qualquer outro direito previsto no art. 18 da LGPD, como confirmar a existência de tratamento ou
+              obter informações sobre compartilhamento, escreva para{" "}
+              <a href={`mailto:${LEGAL_CONTROLLER.email}`} className="font-medium text-brand hover:underline">
+                {LEGAL_CONTROLLER.email}
+              </a>
+              . Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).
+            </p>
           </section>
 
           <section className="grid gap-2.5">
-            <h2 className="text-lg font-semibold text-foreground">6. Cookies e armazenamento local</h2>
+            <h2 className="text-lg font-semibold text-foreground">8. Cookies e armazenamento local</h2>
             <p>
               Utilizamos cookies estritamente necessários para manter sua sessão autenticada com segurança. Não utilizamos
               cookies de rastreamento publicitário de terceiros.
@@ -122,7 +177,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="grid gap-2.5">
-            <h2 className="text-lg font-semibold text-foreground">7. Atualizações desta política</h2>
+            <h2 className="text-lg font-semibold text-foreground">9. Atualizações desta política</h2>
             <p>
               Esta política pode ser atualizada periodicamente para refletir novos recursos do aplicativo. A data de revisão
               no topo desta página sempre indica a versão vigente.
