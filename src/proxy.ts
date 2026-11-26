@@ -8,7 +8,7 @@ const SIGN_UP_PATH = "/cadastro";
 /** Public landing page, served at `/` to visitors without a session. */
 const LANDING_PATH = "/apresentacao";
 /** Routes reachable without a session. */
-const PUBLIC_PATHS = new Set([LOGIN_PATH, SIGN_UP_PATH, LANDING_PATH, "/marca", "/auth/callback"]);
+const PUBLIC_PATHS = new Set([LOGIN_PATH, SIGN_UP_PATH, LANDING_PATH, "/marca", "/privacidade", "/termos", "/auth/callback"]);
 /** Auth screens a signed-in user has no reason to see. */
 const AUTH_PATHS = new Set([LOGIN_PATH, SIGN_UP_PATH]);
 
@@ -71,6 +71,8 @@ function redirectTo(request: NextRequest, pathname: string, source?: NextRespons
 }
 
 export const config = {
-  // Skip Next internals, metadata files and static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)"],
+  // Skip Next internals, metadata files, PWA service worker, crawlers and static assets.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|sw.js|robots.txt|sitemap.xml|opengraph-image|twitter-image|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+  ],
 };
