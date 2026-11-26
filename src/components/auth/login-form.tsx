@@ -152,7 +152,7 @@ export function LoginForm({ initialMode = "sign_in" }: { initialMode?: Exclude<M
               <button
                 type="button"
                 onClick={() => changeMode("forgot")}
-                className="justify-self-end text-sm font-medium text-rose-500 transition-colors hover:text-rose-600"
+                className="justify-self-end text-sm font-medium text-brand transition-colors hover:text-brand/80"
               >
                 Esqueci minha senha
               </button>
@@ -179,7 +179,7 @@ export function LoginForm({ initialMode = "sign_in" }: { initialMode?: Exclude<M
             <button
               type="button"
               onClick={() => changeMode(mode === "sign_in" ? "sign_up" : "sign_in")}
-              className="font-medium text-rose-500 transition-colors hover:text-rose-600"
+              className="font-medium text-brand transition-colors hover:text-brand/80"
             >
               {mode === "sign_in" ? "Criar conta" : "Entrar"}
             </button>

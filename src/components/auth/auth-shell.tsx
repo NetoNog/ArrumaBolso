@@ -16,6 +16,17 @@ export function AuthShell({ children }: { children: ReactNode }) {
           <div className="flex flex-1 items-center py-10">
             <div className="w-full max-w-md">{children}</div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Ao continuar, você concorda com nossos{" "}
+            <Link href="/termos" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Termos de Uso
+            </Link>{" "}
+            e{" "}
+            <Link href="/privacidade" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Política de Privacidade
+            </Link>
+            .
+          </p>
         </div>
         <div className="hidden p-4 lg:block">
           <AuthShowcase />

@@ -15,6 +15,10 @@ export function LandingNavbar() {
           <BrandLogo height={26} />
         </Link>
         <div className="ml-6 hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+          <a href="#novidades" className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
+            <span className="size-1.5 rounded-full bg-[#60A5FA]" />
+            Novidades
+          </a>
           <a href="#funcionalidades" className="transition-colors hover:text-foreground">
             Funcionalidades
           </a>

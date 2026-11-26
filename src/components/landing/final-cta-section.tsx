@@ -51,6 +51,12 @@ export function LandingFooter() {
           <p className="text-sm text-muted-foreground">Cada centavo no seu lugar.</p>
         </div>
         <nav aria-label="Rodapé" className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <Link href="/privacidade" className="transition-colors hover:text-foreground">
+            Privacidade
+          </Link>
+          <Link href="/termos" className="transition-colors hover:text-foreground">
+            Termos de uso
+          </Link>
           <Link href={SIGN_IN_HREF} className="transition-colors hover:text-foreground">
             Entrar
           </Link>

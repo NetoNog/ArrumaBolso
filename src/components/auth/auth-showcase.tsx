@@ -81,8 +81,8 @@ function PhoneIllustration({ slide }: { slide: Slide }) {
   const Badge = slide.icon;
   return (
     <div className="relative motion-safe:animate-[ab-fade-up_500ms_both]">
-      <div className="flex h-72 w-44 flex-col rounded-[2rem] border-[6px] border-slate-800 bg-card p-4 shadow-2xl shadow-blue-900/20 dark:border-zinc-700">
-        <span className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-slate-200 dark:bg-zinc-700" />
+      <div className="flex h-72 w-44 flex-col rounded-[2rem] border-[6px] border-slate-800 bg-card p-4 shadow-2xl shadow-blue-900/20 dark:border-border">
+        <span className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-muted" />
         <PhoneScreen screen={slide.screen} />
       </div>
       <span className="absolute -top-6 -left-10 flex size-20 items-center justify-center rounded-2xl bg-brand text-white shadow-lg shadow-blue-600/30">
@@ -114,7 +114,7 @@ function PhoneScreen({ screen }: { screen: Slide["screen"] }) {
         {[70, 45, 85, 55, 65].map((width, index) => (
           <div key={index} className="flex items-center gap-2">
             <span className="size-5 shrink-0 rounded-md bg-brand-soft" />
-            <span className="h-2 rounded-full bg-slate-200 dark:bg-zinc-700" style={{ width: `${width}%` }} />
+            <span className="h-2 rounded-full bg-muted" style={{ width: `${width}%` }} />
           </div>
         ))}
         <span className="mt-3 h-7 rounded-lg bg-brand" />

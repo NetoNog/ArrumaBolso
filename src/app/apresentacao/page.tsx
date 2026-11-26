@@ -4,9 +4,9 @@ import { LandingPage } from "@/components/landing/landing-page";
 
 // Served at `/` for visitors without a session (the proxy rewrites the URL).
 export const metadata: Metadata = {
-  title: "ArrumaBolso — Cada centavo no seu lugar",
+  title: "ArrumaBolso — Seu dinheiro organizado, sem planilha e sem susto",
   description:
-    "Troque a planilha por um painel que se organiza sozinho: importe a fatura do Nubank em CSV sem duplicidade, acompanhe entradas e saídas e saiba quanto vai sobrar no mês.",
+    "Envie a fatura do seu banco sem repetir gastos, descubra quanto ainda pode gastar hoje, veja os próximos 12 meses e use direto no celular ou no computador.",
 };
 
 export default function Page() {
